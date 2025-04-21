@@ -1,8 +1,8 @@
 
 import { createServer } from '@graphql-yoga/node';
-import { ordersMock } from '../src/data/orders-schema';
+import { orders } from '../src/data/orders-mock';
 
-// Create the GraphQL server
+// Create a standalone GraphQL server that returns JSON responses
 const server = createServer({
   schema: {
     typeDefs: /* GraphQL */ `
@@ -42,8 +42,10 @@ const server = createServer({
     resolvers: {
       Query: {
         orders: (_, { userId, limit, offset }) => {
-          // Filter orders by userId if provided
-          let filteredOrders = ordersMock;
+          console.log('GraphQL Query received:', { userId, limit, offset });
+          
+          // Filter orders by userId if provided (currently ignored in mock)
+          let filteredOrders = orders;
           
           // Apply pagination if provided
           if (offset !== undefined) {
@@ -59,18 +61,19 @@ const server = createServer({
       },
     },
   },
-  // Enable CORS for all origins
+  // Configure GraphQL server with proper options for API behavior
   cors: {
     origin: '*',
     credentials: true,
     methods: ['POST', 'GET', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   },
-  // Configure behavior for different HTTP methods
+  // Enable introspection for tools like Postman
   graphiql: false, // Disable GraphiQL UI in production
-  landingPage: false, // Disable landing page
-  maskedErrors: false, // Show detailed errors
+  landingPage: false, // Disable landing page to prevent HTML responses
+  maskedErrors: false, // Show detailed errors for debugging
+  graphqlEndpoint: '/api/graphql', // Explicitly set the endpoint
 });
 
-// Export a function that processes the request
+// Ensure proper request handling
 export default server;

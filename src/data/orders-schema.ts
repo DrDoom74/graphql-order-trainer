@@ -1,6 +1,7 @@
 
-import graphqlOrdersSchema from './graphqlSchema';
+// This file used to re-export the schema, but we'll make it cleaner
+// by directly importing orders from the mock data
 import { orders } from './orders-mock';
 
-// Export the schema and mock data
-export { graphqlOrdersSchema, orders as ordersMock };
+// Export only what's needed - the orders data for the GraphQL resolver
+export { orders as ordersMock };

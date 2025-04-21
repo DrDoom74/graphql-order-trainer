@@ -1,8 +1,8 @@
 
 import * as React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Link, Download } from "lucide-react";
+import { Link, Download, ExternalLink } from "lucide-react";
 import graphqlOrdersSchema from "@/data/graphqlSchema";
 
 interface ApiUriDialogProps {
@@ -36,12 +36,23 @@ export default function ApiUriDialog({ open, onOpenChange }: ApiUriDialogProps) 
           <DialogTitle className="flex items-center text-lg font-semibold gap-2">
             <Link className="w-5 h-5 text-blue-500" /> API URI
           </DialogTitle>
+          <DialogDescription className="text-xs opacity-70 mt-1">
+            GraphQL API для выполнения запросов
+          </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-auto px-6 py-4 space-y-5 text-sm">
           <div>
             <div className="font-medium mb-1">🔗 GraphQL Endpoint:</div>
             <div className="flex items-center bg-gray-100 rounded px-3 py-2 cursor-text select-all">
               <span className="break-all mr-2">{apiUrl}</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-medium mb-1">📋 Тестовый GraphQL-запрос (curl):</div>
+            <div className="bg-gray-800 text-white rounded px-3 py-2 text-xs overflow-x-auto whitespace-pre">
+{`curl -X POST ${apiUrl} \\
+  -H "Content-Type: application/json" \\
+  -d '{"query": "{ orders(userId: \\"u123\\") { id status total } }"}'`}
             </div>
           </div>
           <div>
@@ -54,14 +65,29 @@ export default function ApiUriDialog({ open, onOpenChange }: ApiUriDialogProps) 
               <li>Postman автоматически определит структуру и позволит удобно писать запросы.</li>
             </ol>
           </div>
-          <Button
-            variant="outline"
-            className="mt-2 gap-2"
-            onClick={handleDownloadSchema}
-          >
-            <Download className="w-4 h-4" />
-            Скачать схему (.graphql)
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              className="mt-2 gap-2"
+              onClick={handleDownloadSchema}
+            >
+              <Download className="w-4 h-4" />
+              Скачать схему (.graphql)
+            </Button>
+            <a 
+              href="https://www.postman.com/downloads/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
+              <Button
+                variant="ghost"
+                className="mt-2 gap-2"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Скачать Postman
+              </Button>
+            </a>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
