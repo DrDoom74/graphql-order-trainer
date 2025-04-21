@@ -1,5 +1,6 @@
 
 import graphqlOrdersSchema from './graphqlSchema';
-import ordersMock from './orders-mock';
+import { orders } from './orders-mock';
 
-export { graphqlOrdersSchema, ordersMock };
+// Export the schema and mock data
+export { graphqlOrdersSchema, orders as ordersMock };
