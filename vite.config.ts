@@ -6,6 +6,7 @@ import { componentTagger } from "lovable-tagger";
 import { createYoga } from "@graphql-yoga/node";
 import { orders } from './src/data/orders-mock';
 import { makeExecutableSchema } from '@graphql-tools/schema';
+import type { ViteDevServer } from 'vite'; // Import ViteDevServer type
 
 // Define GraphQL schema (as string, could be moved to separate file)
 const typeDefs = /* GraphQL */ `
@@ -83,8 +84,8 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    configureServer(server) {
-      // Важно: yoga (как мидлвара) монтируется на нужный endpoint
+    configureServer(server: ViteDevServer) {  // <-- Add typing here
+      // Mount Yoga middleware at /api/graphql
       server.middlewares.use('/api/graphql', yoga);
     },
   },
