@@ -27,7 +27,7 @@ export default function TrainerHeader({ onLinkClick }: { onLinkClick?: () => voi
           className="inline-flex items-center rounded-lg bg-blue-500 text-white font-medium px-4 py-2 text-base hover:bg-blue-600 transition shadow animate-fade-in"
           onClick={onLinkClick}
         >
-          <span>Ответы на Boosty</span>
+          <span>Ответы</span>
           <ArrowRight className="ml-2 w-5 h-5" />
         </a>
       </nav>
@@ -35,3 +35,4 @@ export default function TrainerHeader({ onLinkClick }: { onLinkClick?: () => voi
     </header>
   );
 }
+

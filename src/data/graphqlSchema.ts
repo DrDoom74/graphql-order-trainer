@@ -35,3 +35,4 @@ type Address {
 `;
 
 export default graphqlOrdersSchema;
+
