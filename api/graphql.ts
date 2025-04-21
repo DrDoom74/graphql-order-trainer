@@ -2,6 +2,7 @@
 import { createServer } from '@graphql-yoga/node';
 import { ordersMock } from '../src/data/orders-schema';
 
+// Create the GraphQL server
 const server = createServer({
   schema: {
     typeDefs: /* GraphQL */ `
@@ -58,10 +59,18 @@ const server = createServer({
       },
     },
   },
+  // Enable CORS for all origins
   cors: {
     origin: '*',
     credentials: true,
+    methods: ['POST', 'GET', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   },
+  // Configure behavior for different HTTP methods
+  graphiql: false, // Disable GraphiQL UI in production
+  landingPage: false, // Disable landing page
+  maskedErrors: false, // Show detailed errors
 });
 
+// Export a function that processes the request
 export default server;
