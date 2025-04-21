@@ -1,5 +1,5 @@
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Link } from "lucide-react";
 import * as React from "react";
 import SchemaDialog from "./SchemaDialog";
 import ApiUriDialog from "./ApiUriDialog";
