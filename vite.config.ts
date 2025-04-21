@@ -3,12 +3,11 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import fs from 'fs';
-import { createServer as createGraphQLServer } from '@graphql-yoga/node';
+import { createServer } from "@graphql-yoga/node";
 import { orders } from './src/data/orders-mock';
 
-// Create GraphQL server instance
-const graphqlServer = createGraphQLServer({
+// Create GraphQL server with correct types
+const graphqlServer = createServer({
   schema: {
     typeDefs: /* GraphQL */ `
       type Query {
@@ -46,7 +45,7 @@ const graphqlServer = createGraphQLServer({
     `,
     resolvers: {
       Query: {
-        orders: (_, { userId, limit, offset }) => {
+        orders: (_: any, { userId, limit, offset }: { userId: string, limit?: number, offset?: number }) => {
           console.log('GraphQL Query received:', { userId, limit, offset });
           
           // Filter orders by userId if provided (currently ignored in mock)
@@ -72,6 +71,7 @@ const graphqlServer = createGraphQLServer({
     methods: ['POST', 'GET', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   },
+  // Enable introspection for tools like Postman
   graphiql: false,
   landingPage: false,
   maskedErrors: false,
@@ -82,18 +82,16 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    // Custom middleware to handle GraphQL requests
     middlewares: [
-      // This middleware intercepts requests to /api/graphql
-      (req, res, next) => {
+      // Handle GraphQL requests
+      (req: any, res: any, next: any) => {
         if (req.url && req.url.startsWith('/api/graphql')) {
-          // Handle GraphQL requests directly with yoga
+          // Handle GraphQL requests through the yoga server
           graphqlServer.handle(req, res);
-          return; // Important: prevent further middleware execution
+          return;
         }
-        // For all other routes, continue with Vite's default handling
         next();
-      }
+      },
     ],
   },
   plugins: [

@@ -41,7 +41,7 @@ const server = createServer({
     `,
     resolvers: {
       Query: {
-        orders: (_, { userId, limit, offset }) => {
+        orders: (_: any, { userId, limit, offset }: { userId: string, limit?: number, offset?: number }) => {
           console.log('GraphQL Query received:', { userId, limit, offset });
           
           // Filter orders by userId if provided (currently ignored in mock)
@@ -69,9 +69,9 @@ const server = createServer({
     allowedHeaders: ['Content-Type', 'Authorization'],
   },
   // Enable introspection for tools like Postman
-  graphiql: false, // Disable GraphiQL UI in production
-  landingPage: false, // Disable landing page to prevent HTML responses
-  maskedErrors: false, // Show detailed errors for debugging
+  graphiql: false,
+  landingPage: false,
+  maskedErrors: false,
 });
 
 // Export the handler function
