@@ -2,9 +2,12 @@
 import { ArrowRight } from "lucide-react";
 import * as React from "react";
 import SchemaDialog from "./SchemaDialog";
+import ApiUriDialog from "./ApiUriDialog";
+import { Button } from "@/components/ui/button";
 
 export default function TrainerHeader({ onLinkClick }: { onLinkClick?: () => void }) {
   const [schemaOpen, setSchemaOpen] = React.useState(false);
+  const [apiUriOpen, setApiUriOpen] = React.useState(false);
 
   return (
     <header className="bg-white flex items-center justify-between px-4 py-2 border-b border-gray-200 gap-4 flex-wrap sm:flex-nowrap relative">
@@ -12,14 +15,24 @@ export default function TrainerHeader({ onLinkClick }: { onLinkClick?: () => voi
         GraphQL тренажёр: Заказы пользователя
       </h1>
       <nav className="flex items-center gap-2 sm:gap-4">
-        <button
+        <Button
           type="button"
-          className="inline-flex items-center gap-1 rounded-lg bg-blue-50 text-blue-700 font-medium px-3 py-2 text-base hover:bg-blue-100 active:bg-blue-200 transition border border-blue-100 shadow-sm"
+          variant="outline"
+          className="items-center gap-1 !px-3 py-2"
           onClick={() => setSchemaOpen(true)}
         >
           <span role="img" aria-label="schema" className="text-lg">📘</span>
           <span className="hidden sm:inline">Схема API</span>
-        </button>
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="items-center gap-1 !px-3 py-2"
+          onClick={() => setApiUriOpen(true)}
+        >
+          <span><Link className="inline w-4 h-4" /></span>
+          <span className="hidden sm:inline">API URI</span>
+        </Button>
         <a
           href="https://boosty.to/aklimenko"
           target="_blank"
@@ -32,7 +45,7 @@ export default function TrainerHeader({ onLinkClick }: { onLinkClick?: () => voi
         </a>
       </nav>
       <SchemaDialog open={schemaOpen} onOpenChange={setSchemaOpen} />
+      <ApiUriDialog open={apiUriOpen} onOpenChange={setApiUriOpen} />
     </header>
   );
 }
-

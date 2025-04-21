@@ -45,31 +45,26 @@ type Address {
 export default function SchemaDialog({ open, onOpenChange }: SchemaDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[80vh] w-[95vw] max-w-2xl p-0 overflow-hidden sm:p-0">
-        <div className="flex flex-col h-full">
-          <DialogHeader className="flex-shrink-0 border-b px-6 py-4 relative">
-            <DialogTitle className="flex items-center text-lg font-semibold gap-2">
-              📘 Схема API
-            </DialogTitle>
-            <button
-              aria-label="Закрыть"
-              className="absolute right-4 top-4 rounded-full p-2 hover:bg-gray-100 focus:outline-none transition"
-              onClick={() => onOpenChange(false)}
-              tabIndex={0}
-              type="button"
-            >
-              ❌
-            </button>
-          </DialogHeader>
-          <div
-            className="flex-1 overflow-auto bg-gray-900 text-white px-6 py-4 font-mono text-sm rounded-b-lg"
-            style={{ minHeight: "200px", whiteSpace: "pre-wrap" }}
-          >
-            {graphqlOrdersSchema}
-          </div>
+      <DialogContent
+        className="max-h-[80vh] w-[95vw] max-w-2xl p-0 sm:p-0 flex flex-col"
+        style={{ overflow: "visible" }} // чтобы можно было прокручивать вложенный элемент
+      >
+        <DialogHeader className="flex-shrink-0 border-b px-6 py-4 relative">
+          <DialogTitle className="flex items-center text-lg font-semibold gap-2">
+            📘 Схема API
+          </DialogTitle>
+        </DialogHeader>
+        {/* Блок со скроллом */}
+        <div
+          className="flex-1 min-h-[200px] h-full overflow-auto bg-gray-900 text-white px-6 py-4 font-mono text-sm rounded-b-lg"
+          style={{
+            maxHeight: "60vh",
+            whiteSpace: "pre-wrap"
+          }}
+        >
+          {graphqlOrdersSchema}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-
