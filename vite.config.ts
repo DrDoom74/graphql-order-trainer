@@ -6,7 +6,7 @@ import { componentTagger } from "lovable-tagger";
 import { createYoga } from "@graphql-yoga/node";
 import { orders } from './src/data/orders-mock';
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import type { ViteDevServer } from 'vite'; // Import ViteDevServer type
+import type { ViteDevServer, PreviewServer } from 'vite'; // Import both server types
 
 // Define GraphQL schema (as string, could be moved to separate file)
 const typeDefs = /* GraphQL */ `
@@ -84,7 +84,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    middlewareMode: true, // <-- Add middlewareMode: true
+    middlewareMode: true,
     configureServer(server: ViteDevServer) {
       // Mount Yoga middleware at /api/graphql
       server.middlewares.use('/api/graphql', yoga);
@@ -96,7 +96,8 @@ export default defineConfig(({ mode }) => ({
     // Add a plugin that handles the /api/graphql route in production builds
     {
       name: 'graphql-yoga-handler',
-      configurePreviewServer(server: ViteDevServer) {
+      // Fix the type signature for configurePreviewServer to use PreviewServer
+      configurePreviewServer(server) {
         // Mount Yoga middleware for preview server (production-like)
         server.middlewares.use('/api/graphql', yoga);
       },
