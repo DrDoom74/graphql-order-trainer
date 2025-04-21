@@ -1,14 +1,10 @@
 
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
-import { componentTagger } from "lovable-tagger";
-import { createYoga } from "@graphql-yoga/node";
-import { orders } from './src/data/orders-mock';
+import express from 'express';
+import { createYoga } from '@graphql-yoga/node';
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import type { ViteDevServer } from 'vite'; // Import ViteDevServer type
+import { orders } from './data/orders-mock';
 
-// Define GraphQL schema (as string, could be moved to separate file)
+// Define GraphQL schema
 const typeDefs = /* GraphQL */ `
   type Query {
     orders(userId: ID!, limit: Int, offset: Int): [Order!]!
@@ -66,7 +62,10 @@ const resolvers = {
   },
 };
 
+// Create executable schema
 const schema = makeExecutableSchema({ typeDefs, resolvers });
+
+// Create a standalone GraphQL server
 const yoga = createYoga({
   schema,
   cors: {
@@ -80,35 +79,26 @@ const yoga = createYoga({
   maskedErrors: false,
 });
 
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-    middlewareMode: true, // <-- Add middlewareMode: true
-    configureServer(server: ViteDevServer) {
-      // Mount Yoga middleware at /api/graphql
-      server.middlewares.use('/api/graphql', yoga);
-    },
-  },
-  plugins: [
-    react(),
-    mode === 'development' && componentTagger(),
-    // Add a plugin that handles the /api/graphql route in production builds
-    {
-      name: 'graphql-yoga-handler',
-      configurePreviewServer(server: ViteDevServer) {
-        // Mount Yoga middleware for preview server (production-like)
-        server.middlewares.use('/api/graphql', yoga);
-      },
-      configureServer(server: ViteDevServer) {
-        // This is a duplicate for development mode, but ensures middleware is always mounted
-        server.middlewares.use('/api/graphql', yoga);
-      }
-    }
-  ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
-}));
+// Function to create and configure express server with GraphQL
+export function createServer() {
+  const app = express();
+  
+  // Mount GraphQL middleware
+  app.use('/api/graphql', yoga);
+  
+  // Serve static files from dist directory in production
+  app.use(express.static('dist'));
+  
+  return app;
+}
+
+// If this file is run directly (not imported)
+if (require.main === module) {
+  const port = process.env.PORT || 3000;
+  const app = createServer();
+  
+  app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+    console.log(`GraphQL endpoint: http://localhost:${port}/api/graphql`);
+  });
+}
