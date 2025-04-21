@@ -7,7 +7,7 @@ import { createYoga } from "@graphql-yoga/node";
 import { orders } from './src/data/orders-mock';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 
-// Define GraphQL schema
+// Define GraphQL schema (as string, could be moved to separate file)
 const typeDefs = /* GraphQL */ `
   type Query {
     orders(userId: ID!, limit: Int, offset: Int): [Order!]!
@@ -45,31 +45,28 @@ const typeDefs = /* GraphQL */ `
 
 const resolvers = {
   Query: {
-    orders: (_: any, { userId, limit, offset }: { userId: string, limit?: number, offset?: number }) => {
+    orders: (_: unknown, { userId, limit, offset }: { userId: string, limit?: number, offset?: number }) => {
       console.log('GraphQL Query received:', { userId, limit, offset });
-      
+
       // Filter orders by userId if provided (currently ignored in mock)
       let filteredOrders = orders;
-      
+
       // Apply pagination if provided
       if (offset !== undefined) {
         filteredOrders = filteredOrders.slice(offset);
       }
-      
+
       if (limit !== undefined) {
         filteredOrders = filteredOrders.slice(0, limit);
       }
-      
+
       return filteredOrders;
     },
   },
 };
 
-// Create executable schema
 const schema = makeExecutableSchema({ typeDefs, resolvers });
-
-// Create GraphQL server with correct schema format
-const graphqlServer = createYoga({
+const yoga = createYoga({
   schema,
   cors: {
     origin: '*',
@@ -82,22 +79,14 @@ const graphqlServer = createYoga({
   maskedErrors: false,
 });
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    middlewares: [
-      // Handle GraphQL requests
-      (req: any, res: any, next: any) => {
-        if (req.url && req.url.startsWith('/api/graphql')) {
-          // Handle GraphQL requests through the yoga server
-          graphqlServer.handle(req, res);
-          return;
-        }
-        next();
-      },
-    ],
+    configureServer(server) {
+      // Важно: yoga (как мидлвара) монтируется на нужный endpoint
+      server.middlewares.use('/api/graphql', yoga);
+    },
   },
   plugins: [
     react(),
