@@ -1,4 +1,3 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -6,9 +5,8 @@ import { componentTagger } from "lovable-tagger";
 import { createYoga } from "@graphql-yoga/node";
 import { orders } from './src/data/orders-mock';
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import type { ViteDevServer, PreviewServer } from 'vite'; // Import both server types
+import type { ViteDevServer, PreviewServer } from 'vite';
 
-// Define GraphQL schema (as string, could be moved to separate file)
 const typeDefs = /* GraphQL */ `
   type Query {
     orders(userId: ID!, limit: Int, offset: Int): [Order!]!
@@ -49,10 +47,8 @@ const resolvers = {
     orders: (_: unknown, { userId, limit, offset }: { userId: string, limit?: number, offset?: number }) => {
       console.log('GraphQL Query received:', { userId, limit, offset });
 
-      // Filter orders by userId if provided (currently ignored in mock)
       let filteredOrders = orders;
 
-      // Apply pagination if provided
       if (offset !== undefined) {
         filteredOrders = filteredOrders.slice(offset);
       }
@@ -86,25 +82,20 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     middlewareMode: true,
     configureServer(server: ViteDevServer) {
-      // Mount Yoga middleware at /api/graphql
       server.middlewares.use('/api/graphql', yoga);
     },
   },
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
-    // Add a plugin that handles the /api/graphql route in production builds
     {
       name: 'graphql-yoga-handler',
-      // Fix the type signature for configurePreviewServer to use PreviewServer
-      configurePreviewServer(server) {
-        // Mount Yoga middleware for preview server (production-like)
+      configurePreviewServer(server: PreviewServer) {
         server.middlewares.use('/api/graphql', yoga);
       },
       configureServer(server: ViteDevServer) {
-        // This is a duplicate for development mode, but ensures middleware is always mounted
         server.middlewares.use('/api/graphql', yoga);
-      }
+      },
     }
   ].filter(Boolean),
   resolve: {
