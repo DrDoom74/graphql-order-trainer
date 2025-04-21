@@ -10,7 +10,8 @@ interface ApiUriDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const apiUrl = "https://graphql-order-trainer.lovable.app/api/graphql";
+// Use relative path for API endpoint which will work in both development and production
+const apiUrl = "/api/graphql";
 
 const handleDownloadSchema = () => {
   const schemaBlob = new Blob([graphqlOrdersSchema.trim()], { type: "text/plain" });
@@ -26,6 +27,9 @@ const handleDownloadSchema = () => {
 };
 
 export default function ApiUriDialog({ open, onOpenChange }: ApiUriDialogProps) {
+  // Get the full URL including origin for display purposes
+  const fullApiUrl = `${window.location.origin}${apiUrl}`;
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -44,13 +48,13 @@ export default function ApiUriDialog({ open, onOpenChange }: ApiUriDialogProps) 
           <div>
             <div className="font-medium mb-1">🔗 GraphQL Endpoint:</div>
             <div className="flex items-center bg-gray-100 rounded px-3 py-2 cursor-text select-all">
-              <span className="break-all mr-2">{apiUrl}</span>
+              <span className="break-all mr-2">{fullApiUrl}</span>
             </div>
           </div>
           <div>
             <div className="font-medium mb-1">📋 Тестовый GraphQL-запрос (curl):</div>
             <div className="bg-gray-800 text-white rounded px-3 py-2 text-xs overflow-x-auto whitespace-pre">
-{`curl -X POST ${apiUrl} \\
+{`curl -X POST ${fullApiUrl} \\
   -H "Content-Type: application/json" \\
   -d '{"query": "{ orders(userId: \\"u123\\") { id status total } }"}'`}
             </div>

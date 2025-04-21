@@ -72,8 +72,10 @@ const server = createServer({
   graphiql: false, // Disable GraphiQL UI in production
   landingPage: false, // Disable landing page to prevent HTML responses
   maskedErrors: false, // Show detailed errors for debugging
-  graphqlEndpoint: '/api/graphql', // Explicitly set the endpoint
 });
 
-// Ensure proper request handling
+// Export the handler function
+export const graphqlHandler = server.handle.bind(server);
+
+// Export the GraphQL server for Vite middleware integration
 export default server;
