@@ -5,73 +5,78 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { createYoga } from "@graphql-yoga/node";
 import { orders } from './src/data/orders-mock';
+import { makeExecutableSchema } from '@graphql-tools/schema';
 
-// Create GraphQL server with correct types
-const graphqlServer = createYoga({
-  schema: {
-    typeDefs: /* GraphQL */ `
-      type Query {
-        orders(userId: ID!, limit: Int, offset: Int): [Order!]!
-      }
+// Define GraphQL schema
+const typeDefs = /* GraphQL */ `
+  type Query {
+    orders(userId: ID!, limit: Int, offset: Int): [Order!]!
+  }
 
-      type Order {
-        id: ID!
-        date: String!
-        status: String!
-        total: Float!
-        items: [OrderItem!]!
-        delivery: Delivery!
-      }
+  type Order {
+    id: ID!
+    date: String!
+    status: String!
+    total: Float!
+    items: [OrderItem!]!
+    delivery: Delivery!
+  }
 
-      type OrderItem {
-        name: String!
-        quantity: Int!
-        price: Float!
-      }
+  type OrderItem {
+    name: String!
+    quantity: Int!
+    price: Float!
+  }
 
-      type Delivery {
-        delivered: Boolean!
-        deliveryDate: String
-        type: String!
-        address: Address!
-      }
+  type Delivery {
+    delivered: Boolean!
+    deliveryDate: String
+    type: String!
+    address: Address!
+  }
 
-      type Address {
-        street: String!
-        city: String!
-        zip: String!
-        country: String!
+  type Address {
+    street: String!
+    city: String!
+    zip: String!
+    country: String!
+  }
+`;
+
+const resolvers = {
+  Query: {
+    orders: (_: any, { userId, limit, offset }: { userId: string, limit?: number, offset?: number }) => {
+      console.log('GraphQL Query received:', { userId, limit, offset });
+      
+      // Filter orders by userId if provided (currently ignored in mock)
+      let filteredOrders = orders;
+      
+      // Apply pagination if provided
+      if (offset !== undefined) {
+        filteredOrders = filteredOrders.slice(offset);
       }
-    `,
-    resolvers: {
-      Query: {
-        orders: (_: any, { userId, limit, offset }: { userId: string, limit?: number, offset?: number }) => {
-          console.log('GraphQL Query received:', { userId, limit, offset });
-          
-          // Filter orders by userId if provided (currently ignored in mock)
-          let filteredOrders = orders;
-          
-          // Apply pagination if provided
-          if (offset !== undefined) {
-            filteredOrders = filteredOrders.slice(offset);
-          }
-          
-          if (limit !== undefined) {
-            filteredOrders = filteredOrders.slice(0, limit);
-          }
-          
-          return filteredOrders;
-        },
-      },
+      
+      if (limit !== undefined) {
+        filteredOrders = filteredOrders.slice(0, limit);
+      }
+      
+      return filteredOrders;
     },
   },
+};
+
+// Create executable schema
+const schema = makeExecutableSchema({ typeDefs, resolvers });
+
+// Create GraphQL server with correct schema format
+const graphqlServer = createYoga({
+  schema,
   cors: {
     origin: '*',
     credentials: true,
     methods: ['POST', 'GET', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   },
-  // Enable introspection for tools like Postman
   graphiql: false,
   landingPage: false,
   maskedErrors: false,
