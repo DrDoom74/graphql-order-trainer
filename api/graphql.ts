@@ -1,9 +1,9 @@
 
-import { createServer } from '@graphql-yoga/node';
+import { createYoga } from '@graphql-yoga/node';
 import { orders } from '../src/data/orders-mock';
 
 // Create a standalone GraphQL server that returns JSON responses
-const server = createServer({
+const server = createYoga({
   schema: {
     typeDefs: /* GraphQL */ `
       type Query {

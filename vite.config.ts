@@ -3,11 +3,11 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import { createServer } from "@graphql-yoga/node";
+import { createYoga } from "@graphql-yoga/node";
 import { orders } from './src/data/orders-mock';
 
 // Create GraphQL server with correct types
-const graphqlServer = createServer({
+const graphqlServer = createYoga({
   schema: {
     typeDefs: /* GraphQL */ `
       type Query {
