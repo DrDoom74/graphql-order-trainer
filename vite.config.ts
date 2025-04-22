@@ -8,8 +8,55 @@ import { orders } from './src/data/orders-mock';
 import { users } from './src/data/users-mock';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import graphqlFields from 'graphql-fields';
-import { pick } from 'lodash';
+import lodash from 'lodash';
 import type { ViteDevServer, PreviewServer } from 'vite';
+import type { GraphQLResolveInfo } from 'graphql';
+
+const { pick } = lodash;
+
+// Define types for resolver parameters and context
+interface ResolverContext {
+  // Add any context properties here if needed
+}
+
+// Define the shape of order items
+interface OrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+}
+
+// Define the shape of address
+interface Address {
+  street: string;
+  city: string;
+  zip: string;
+  country: string;
+}
+
+// Define the shape of delivery
+interface Delivery {
+  delivered: boolean;
+  deliveryDate: string | null;
+  type: string;
+  address: Address;
+}
+
+// Define the shape of an order
+interface Order {
+  id: string;
+  date: string;
+  status: string;
+  total: number;
+  items: OrderItem[];
+  delivery: Delivery;
+}
+
+// Define the shape of a user
+interface User {
+  id: string;
+  name: string;
+}
 
 const typeDefs = /* GraphQL */ `
   type Query {
@@ -54,7 +101,7 @@ const typeDefs = /* GraphQL */ `
 
 const resolvers = {
   Query: {
-    orders: (_, { userId, limit, offset }, context, info) => {
+    orders: (_: unknown, { userId, limit, offset }: { userId: string; limit?: number; offset?: number }, context: ResolverContext, info: GraphQLResolveInfo) => {
       console.log('GraphQL Query received:', { userId, limit, offset });
 
       // Check if userId exists
@@ -64,7 +111,7 @@ const resolvers = {
       }
 
       // Get requested fields
-      const fields = graphqlFields(info);
+      const fields = graphqlFields(info) as Record<string, any>;
       
       let filteredOrders = orders;
 
@@ -79,7 +126,7 @@ const resolvers = {
       // Return only requested fields
       return filteredOrders.map(order => {
         // Handle nested fields
-        const result = {};
+        const result: Record<string, any> = {};
         
         Object.keys(fields).forEach(field => {
           if (field === 'items' && 'items' in fields) {
@@ -99,16 +146,16 @@ const resolvers = {
             }
           } else {
             // Handle top-level fields
-            result[field] = order[field];
+            result[field] = order[field as keyof Order];
           }
         });
         
         return result;
       });
     },
-    users: (_, args, context, info) => {
+    users: (_: unknown, args: unknown, context: ResolverContext, info: GraphQLResolveInfo) => {
       // Get requested fields
-      const fields = graphqlFields(info);
+      const fields = graphqlFields(info) as Record<string, any>;
       // Return only requested fields
       return users.map(user => pick(user, Object.keys(fields)));
     }

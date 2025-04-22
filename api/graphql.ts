@@ -4,7 +4,10 @@ import { orders } from '../src/data/orders-mock';
 import { users } from '../src/data/users-mock';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import graphqlFields from 'graphql-fields';
-import { pick } from 'lodash';
+import lodash from 'lodash';
+import type { GraphQLResolveInfo } from 'graphql';
+
+const { pick } = lodash;
 
 // Define the GraphQL schema
 const typeDefs = /* GraphQL */ `
@@ -48,9 +51,11 @@ const typeDefs = /* GraphQL */ `
   }
 `;
 
+interface ResolverContext {}
+
 const resolvers = {
   Query: {
-    orders: (_, { userId, limit, offset }, context, info) => {
+    orders: (_: unknown, { userId, limit, offset }: { userId: string; limit?: number; offset?: number }, context: ResolverContext, info: GraphQLResolveInfo) => {
       console.log('GraphQL Query received:', { userId, limit, offset });
       
       // Check if userId exists
@@ -60,7 +65,7 @@ const resolvers = {
       }
       
       // Get requested fields
-      const fields = graphqlFields(info);
+      const fields = graphqlFields(info) as Record<string, any>;
       
       // Filter orders by userId if provided (currently ignored in mock)
       let filteredOrders = orders;
@@ -77,7 +82,7 @@ const resolvers = {
       // Return only requested fields
       return filteredOrders.map(order => {
         // Handle nested fields
-        const result = {};
+        const result: Record<string, any> = {};
         
         Object.keys(fields).forEach(field => {
           if (field === 'items' && 'items' in fields) {
@@ -104,9 +109,9 @@ const resolvers = {
         return result;
       });
     },
-    users: (_, args, context, info) => {
+    users: (_: unknown, args: unknown, context: ResolverContext, info: GraphQLResolveInfo) => {
       // Get requested fields
-      const fields = graphqlFields(info);
+      const fields = graphqlFields(info) as Record<string, any>;
       // Return only requested fields
       return users.map(user => pick(user, Object.keys(fields)));
     }
