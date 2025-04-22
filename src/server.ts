@@ -10,6 +10,41 @@ import type { GraphQLResolveInfo } from 'graphql';
 
 const { pick } = lodash;
 
+// Define interfaces for our data types
+interface OrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+}
+
+interface Address {
+  street: string;
+  city: string;
+  zip: string;
+  country: string;
+}
+
+interface Delivery {
+  delivered: boolean;
+  deliveryDate: string | null;
+  type: string;
+  address: Address;
+}
+
+interface Order {
+  id: string;
+  date: string;
+  status: string;
+  total: number;
+  items: OrderItem[];
+  delivery: Delivery;
+}
+
+interface User {
+  id: string;
+  name: string;
+}
+
 // Define GraphQL schema
 const typeDefs = /* GraphQL */ `
   type Query {
@@ -87,23 +122,25 @@ const resolvers = {
         
         Object.keys(fields).forEach(field => {
           if (field === 'items' && 'items' in fields) {
-            // Handle items selection
+            // Handle items selection with proper typing
             result['items'] = order.items.map(item => 
-              pick(item, Object.keys(fields.items))
+              pick(item as OrderItem, Object.keys(fields.items) as Array<keyof OrderItem>)
             );
           } else if (field === 'delivery' && 'delivery' in fields) {
-            // Handle delivery selection and its nested address
-            result['delivery'] = { ...pick(order.delivery, Object.keys(fields.delivery)) };
+            // Handle delivery selection with proper typing
+            result['delivery'] = { 
+              ...pick(order.delivery as Delivery, Object.keys(fields.delivery) as Array<keyof Delivery>) 
+            };
             
             if ('address' in fields.delivery) {
               result['delivery']['address'] = pick(
-                order.delivery.address, 
-                Object.keys(fields.delivery.address)
+                order.delivery.address as Address, 
+                Object.keys(fields.delivery.address) as Array<keyof Address>
               );
             }
           } else {
             // Handle top-level fields
-            result[field] = order[field];
+            result[field] = order[field as keyof Order];
           }
         });
         
@@ -113,8 +150,10 @@ const resolvers = {
     users: (_: unknown, args: unknown, context: ResolverContext, info: GraphQLResolveInfo) => {
       // Get requested fields
       const fields = graphqlFields(info) as Record<string, any>;
-      // Return only requested fields
-      return users.map(user => pick(user, Object.keys(fields)));
+      // Return only requested fields with proper typing
+      return users.map(user => 
+        pick(user as User, Object.keys(fields) as Array<keyof User>)
+      );
     }
   },
 };
