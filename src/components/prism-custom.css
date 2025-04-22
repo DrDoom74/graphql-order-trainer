@@ -1,0 +1,54 @@
+
+/* Reset background to white */
+pre[class*="language-"],
+code[class*="language-"] {
+  color: #24292e;
+  background: none;
+  text-shadow: none;
+}
+
+/* GraphQL Types */
+.token.type,
+.token.class-name {
+  color: #8B5CF6; /* Violet */
+}
+
+/* GraphQL Arguments */
+.token.property,
+.token.parameter {
+  color: #F97316; /* Orange */
+}
+
+/* Field Names */
+.token.property-access,
+.token.method {
+  color: #1EAEDB; /* Blue */
+}
+
+/* Brackets and Keywords */
+.token.punctuation,
+.token.keyword {
+  color: #6B7280; /* Gray */
+}
+
+/* JSON Styling */
+.language-json .token.property {
+  color: #24292e; /* Dark for keys */
+}
+
+.language-json .token.string {
+  color: #22863a; /* Green for strings */
+}
+
+.language-json .token.number {
+  color: #005cc5; /* Blue for numbers */
+}
+
+.language-json .token.boolean {
+  color: #8B5CF6; /* Violet for booleans */
+}
+
+.language-json .token.null {
+  color: #6B7280; /* Gray for null */
+  font-style: italic;
+}
