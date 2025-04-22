@@ -1,6 +1,6 @@
 
 import express from 'express';
-import { createYoga } from '@graphql-yoga/node';
+import { createYoga } from 'graphql-yoga';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { orders } from './data/orders-mock';
 

@@ -1,5 +1,5 @@
 
-import { createYoga } from '@graphql-yoga/node';
+import { createYoga } from 'graphql-yoga';
 import { orders } from '../src/data/orders-mock';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 
@@ -81,7 +81,7 @@ const server = createYoga({
 });
 
 // Export the handler function
-export const graphqlHandler = server.handle.bind(server);
+export const graphqlHandler = server;
 
 // Export the GraphQL server for Vite middleware integration
 export default server;

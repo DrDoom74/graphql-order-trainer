@@ -1,8 +1,9 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import { createYoga } from "@graphql-yoga/node";
+import { createYoga } from "graphql-yoga";
 import { orders } from './src/data/orders-mock';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import type { ViteDevServer, PreviewServer } from 'vite';
@@ -80,20 +81,16 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    middlewareMode: true,
-    configureServer(server: ViteDevServer) {
-      server.middlewares.use('/api/graphql', yoga);
-    },
   },
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
     {
       name: 'graphql-yoga-handler',
-      configurePreviewServer(server: PreviewServer) {
+      configureServer(server: ViteDevServer) {
         server.middlewares.use('/api/graphql', yoga);
       },
-      configureServer(server: ViteDevServer) {
+      configurePreviewServer(server: PreviewServer) {
         server.middlewares.use('/api/graphql', yoga);
       },
     }
