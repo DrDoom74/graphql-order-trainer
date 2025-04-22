@@ -3,11 +3,13 @@ import express from 'express';
 import { createYoga } from 'graphql-yoga';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { orders } from './data/orders-mock';
+import { users } from './data/users-mock';
 
 // Define GraphQL schema
 const typeDefs = /* GraphQL */ `
   type Query {
     orders(userId: ID!, limit: Int, offset: Int): [Order!]!
+    users: [User!]!
   }
 
   type Order {
@@ -38,12 +40,23 @@ const typeDefs = /* GraphQL */ `
     zip: String!
     country: String!
   }
+  
+  type User {
+    id: ID!
+    name: String
+  }
 `;
 
 const resolvers = {
   Query: {
     orders: (_: unknown, { userId, limit, offset }: { userId: string, limit?: number, offset?: number }) => {
       console.log('GraphQL Query received:', { userId, limit, offset });
+
+      // Check if userId exists
+      const userExists = users.some(user => user.id === userId);
+      if (!userExists) {
+        throw new Error(`Пользователь с id '${userId}' не найден`);
+      }
 
       // Filter orders by userId if provided (currently ignored in mock)
       let filteredOrders = orders;
@@ -59,6 +72,9 @@ const resolvers = {
 
       return filteredOrders;
     },
+    users: () => {
+      return users;
+    }
   },
 };
 

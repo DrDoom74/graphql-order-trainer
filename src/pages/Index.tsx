@@ -1,12 +1,14 @@
+
 import * as React from "react";
 import TrainerHeader from "@/components/TrainerHeader";
 import TrainerFooter from "@/components/TrainerFooter";
 import TrainerTaskNav from "@/components/TrainerTaskNav";
 import GraphQLEditor from "@/components/GraphQLEditor";
 import GraphQLResult from "@/components/GraphQLResult";
+import AvailableUsers from "@/components/AvailableUsers";
 import { orders } from "@/data/orders-mock";
 import { tasks } from "@/data/tasks";
-import { validateGQL } from "@/utils/graphql-validate";
+import { validateGQL, validateUserId } from "@/utils/graphql-validate";
 
 export default function Index() {
   // States
@@ -46,6 +48,15 @@ export default function Index() {
 
   // Validate arguments in the query
   const validateArguments = (query: string): { valid: boolean; error?: string } => {
+    // Extract userId from the query
+    const userIdMatch = query.match(/userId\s*:\s*["']([^"']+)["']/);
+    if (userIdMatch && userIdMatch[1]) {
+      const userIdValidation = validateUserId(userIdMatch[1]);
+      if (!userIdValidation.valid) {
+        return userIdValidation;
+      }
+    }
+    
     // Check for invalid types in arguments
     const numericArgsRegex = /(?:limit|offset):\s*["']?([^0-9\s,)}]*)["']?/g;
     let match;
@@ -76,24 +87,29 @@ export default function Index() {
       return;
     }
 
-    // Validate arguments
-    const argsCheck = validateArguments(val);
-    if (!argsCheck.valid) {
-      setResult(null);
-      setError(argsCheck.error);
-      return;
+    // Validate arguments if it's an orders query
+    if (val.includes("orders(")) {
+      const argsCheck = validateArguments(val);
+      if (!argsCheck.valid) {
+        setResult(null);
+        setError(argsCheck.error);
+        return;
+      }
     }
 
-    // In sandbox mode, just show the query result
-    if (isSandboxMode) {
+    // In sandbox mode or for users query, just show the query result
+    if (isSandboxMode || val.includes("users")) {
       try {
-        // Try to execute the query against mock data
         // Simple simulation of query processing on the client
-        const queryMatch = val.match(/{\s*orders\s*\(/);
-        if (queryMatch) {
+        if (val.includes("users")) {
+          // For users query, return our mock users data
+          const { users } = require('@/data/users-mock');
+          setResult(users);
+        } else if (val.match(/{\s*orders\s*\(/)) {
+          // For orders query, return our mock orders data
           setResult(orders);
         } else {
-          setError("Запрос должен содержать { orders(...) }");
+          setError("Запрос должен содержать { orders(...) } или { users }");
         }
       } catch (err) {
         setError(String(err));
@@ -137,6 +153,27 @@ export default function Index() {
     setIsTaskInvalid(false);
   }
 
+  function handleCopyUserId(userId: string) {
+    // This will insert the userId at the cursor or replace the selected text
+    const editor = document.querySelector('textarea') as HTMLTextAreaElement;
+    if (editor) {
+      const userIdString = `"${userId}"`;
+      // Insert at cursor or replace selection
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const currentVal = answers[isSandboxMode ? 0 : current];
+      const newValue = currentVal.substring(0, start) + userIdString + currentVal.substring(end);
+      handleEditorChange(newValue);
+      
+      // Set focus back to editor and place cursor after the inserted text
+      setTimeout(() => {
+        editor.focus();
+        const newPosition = start + userIdString.length;
+        editor.setSelectionRange(newPosition, newPosition);
+      }, 0);
+    }
+  }
+
   function prev() {
     if (isSandboxMode) return;
     setCurrent((c) => (c === 0 ? 0 : c - 1));
@@ -164,11 +201,19 @@ export default function Index() {
               <span className="text-lg font-medium text-gray-800">🧪 Режим песочницы</span>
               <span className="text-sm text-gray-600">Свободное экспериментирование с GraphQL-запросами</span>
             </div>
+            <div className="flex items-center mt-2">
+              <AvailableUsers onCopyUserId={handleCopyUserId} />
+              <span className="text-sm text-gray-500">← Получить список доступных пользователей</span>
+            </div>
           </section>
         ) : (
           <section className="mb-3 w-full bg-white rounded-xl p-4 shadow-sm flex flex-col items-start">
             <div className="flex flex-row items-center gap-3 py-2 w-full">
               <span className="text-lg font-medium text-gray-800">{task.title}</span>
+            </div>
+            <div className="flex items-center mt-2">
+              <AvailableUsers onCopyUserId={handleCopyUserId} />
+              <span className="text-sm text-gray-500">← Получить список доступных пользователей</span>
             </div>
           </section>
         )}

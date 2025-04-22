@@ -2,6 +2,7 @@
 const graphqlOrdersSchema = `
 type Query {
   orders(userId: ID!, limit: Int, offset: Int): [Order!]!
+  users: [User!]!
 }
 
 type Order {
@@ -32,7 +33,11 @@ type Address {
   zip: String!
   country: String!
 }
+
+type User {
+  id: ID!
+  name: String
+}
 `;
 
 export default graphqlOrdersSchema;
-
