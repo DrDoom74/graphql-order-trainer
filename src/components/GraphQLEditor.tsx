@@ -16,7 +16,7 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
   const preRef = React.useRef<HTMLPreElement>(null);
   
   React.useEffect(() => {
-    // Подсветка синтаксиса при изменении значения
+    // Highlight syntax when value changes
     if (preRef.current) {
       preRef.current.textContent = value;
       Prism.highlightElement(preRef.current);
@@ -24,7 +24,7 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
   }, [value]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Обработка Tab для добавления отступов
+    // Handle Tab for indentation
     if (e.key === 'Tab' && !e.shiftKey) {
       e.preventDefault();
       const start = textareaRef.current?.selectionStart || 0;
@@ -33,7 +33,7 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
       const newValue = value.substring(0, start) + '  ' + value.substring(end);
       onChange(newValue);
       
-      // Установка курсора после вставленных пробелов
+      // Set cursor position after inserted spaces
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.selectionStart = start + 2;
@@ -42,7 +42,7 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
       }, 0);
     }
     
-    // Ctrl+Enter для запуска запроса
+    // Ctrl+Enter to execute query
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && onExecute) {
       e.preventDefault();
       onExecute();
