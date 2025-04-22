@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import TrainerHeader from "@/components/TrainerHeader";
 import TrainerFooter from "@/components/TrainerFooter";
@@ -10,7 +9,7 @@ import { tasks } from "@/data/tasks";
 import { validateGQL } from "@/utils/graphql-validate";
 
 export default function Index() {
-  // Стейты
+  // States
   const [current, setCurrent] = React.useState(0);
   const [answers, setAnswers] = React.useState<string[]>(
     Array(tasks.length).fill("")
@@ -29,7 +28,7 @@ export default function Index() {
     setError(undefined);
     setResult(null);
     setIsTaskInvalid(false);
-    // Если уже решено и есть ответ — показываем результат
+    // If already solved and there is an answer - show the result
     if (correct[current] && answers[current]) {
       setResult(
         task.getExpectedData(orders)
@@ -37,7 +36,7 @@ export default function Index() {
     }
   }, [current, isSandboxMode]);
 
-  // Переключение режима "Песочница"
+  // Toggle "Sandbox" mode
   const toggleSandboxMode = () => {
     setIsSandboxMode(prev => !prev);
     setError(undefined);
@@ -45,7 +44,25 @@ export default function Index() {
     setIsTaskInvalid(false);
   };
 
-  // Проверка: разрешаем только select запросы
+  // Validate arguments in the query
+  const validateArguments = (query: string): { valid: boolean; error?: string } => {
+    // Check for invalid types in arguments
+    const numericArgsRegex = /(?:limit|offset):\s*["']?([^0-9\s,)}]*)["']?/g;
+    let match;
+    
+    while ((match = numericArgsRegex.exec(query)) !== null) {
+      if (match[1] && isNaN(Number(match[1]))) {
+        return { 
+          valid: false, 
+          error: "Ошибка в аргументах запроса: limit и offset должны быть числами." 
+        };
+      }
+    }
+    
+    return { valid: true };
+  };
+
+  // Run query handler
   function handleRun() {
     setError(undefined);
     setIsTaskInvalid(false);
@@ -59,11 +76,19 @@ export default function Index() {
       return;
     }
 
-    // В режиме песочницы просто показываем результат запроса
+    // Validate arguments
+    const argsCheck = validateArguments(val);
+    if (!argsCheck.valid) {
+      setResult(null);
+      setError(argsCheck.error);
+      return;
+    }
+
+    // In sandbox mode, just show the query result
     if (isSandboxMode) {
       try {
-        // Пытаемся выполнить запрос к мок-данным
-        // Простая имитация обработки запроса на клиенте
+        // Try to execute the query against mock data
+        // Simple simulation of query processing on the client
         const queryMatch = val.match(/{\s*orders\s*\(/);
         if (queryMatch) {
           setResult(orders);
@@ -76,21 +101,23 @@ export default function Index() {
       return;
     }
 
-    // Доп. валидация на структуру задания
-    if (!task.validate(val)) {
+    // Additional validation for task structure
+    if (!correct[current] && !task.validate(val)) {
       setResult(task.getInvalidData(orders));
       setIsTaskInvalid(true);
       return;
     }
     
-    // Успех!
-    const newCorrect = [...correct];
-    newCorrect[current] = true;
-    setCorrect(newCorrect);
+    // Success!
+    if (!correct[current]) {
+      const newCorrect = [...correct];
+      newCorrect[current] = true;
+      setCorrect(newCorrect);
 
-    const newAnswers = [...answers];
-    newAnswers[current] = val;
-    setAnswers(newAnswers);
+      const newAnswers = [...answers];
+      newAnswers[current] = val;
+      setAnswers(newAnswers);
+    }
 
     setError(undefined);
     setResult(task.getExpectedData(orders));
@@ -104,16 +131,10 @@ export default function Index() {
       newAnswers[current] = text;
     }
     setAnswers(newAnswers);
-    setError(undefined);
-    setResult(null);
-    setIsTaskInvalid(false);
     
-    // Сбросить "галочку" для текущего задания только если не в режиме песочницы
-    if (!isSandboxMode && correct[current]) {
-      const newCorrect = [...correct];
-      newCorrect[current] = false;
-      setCorrect(newCorrect);
-    }
+    // Only clear errors when editing, but keep the result displayed
+    setError(undefined);
+    setIsTaskInvalid(false);
   }
 
   function prev() {
@@ -152,7 +173,7 @@ export default function Index() {
           </section>
         )}
         
-        {/* Блок редактор-вывод */}
+        {/* Editor-output block */}
         <section
           className="w-full flex-1 flex gap-4 flex-col md:flex-row"
         >
@@ -161,16 +182,9 @@ export default function Index() {
             <GraphQLEditor
               value={answers[isSandboxMode ? 0 : current]}
               onChange={handleEditorChange}
-              disabled={!isSandboxMode && correct[current]}
+              disabled={false} // No longer disabling after completion
               onExecute={handleRun}
             />
-            <button
-              className="mt-3 w-full md:w-auto px-6 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 shadow text-white font-semibold text-lg transition text-center animate-scale-in"
-              onClick={handleRun}
-              disabled={!isSandboxMode && correct[current]}
-            >
-              {!isSandboxMode && correct[current] ? "Успешно!" : "Выполнить"}
-            </button>
           </div>
           <div className="flex-1 flex flex-col">
             <div className="font-semibold mb-2 text-gray-700">Результат выполнения</div>

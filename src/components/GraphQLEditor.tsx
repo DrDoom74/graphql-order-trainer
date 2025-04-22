@@ -2,7 +2,7 @@
 import * as React from "react";
 import Prism from "prismjs";
 import "prismjs/components/prism-graphql";
-import "./prism-custom.css"; // We'll create this file for custom styling
+import "./prism-custom.css"; // Using custom styling
 
 interface Props {
   value: string;
@@ -53,7 +53,7 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
       <div className="relative w-full">
         <pre 
           ref={preRef} 
-          className="w-full absolute top-0 left-0 pointer-events-none rounded-lg border border-gray-200 px-4 py-3 text-base min-h-[240px] overflow-hidden font-mono bg-white"
+          className="language-graphql w-full absolute top-0 left-0 pointer-events-none rounded-lg border border-gray-200 px-4 py-3 text-base min-h-[240px] overflow-hidden font-mono bg-white"
           style={{ margin: 0 }}
         />
         <textarea
@@ -75,7 +75,7 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
         disabled={disabled}
         className="w-full md:w-auto px-6 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 shadow text-white font-semibold text-lg transition text-center disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {disabled ? "Успешно!" : "Выполнить"}
+        Выполнить
       </button>
     </div>
   );

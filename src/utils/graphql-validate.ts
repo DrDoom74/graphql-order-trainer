@@ -4,7 +4,7 @@ export function validateGQL(input: string) {
     return { valid: false, error: "Запрос не может быть пустым" };
   }
   
-  // Разрешаем только { orders(userId...) ... }
+  // Allow only { orders(userId...) ... }
   if (!input.trim().startsWith("{")) {
     return { valid: false, error: "Запрос должен начинаться с '{'" };
   }
@@ -18,7 +18,7 @@ export function validateGQL(input: string) {
     return { valid: false, error: "userId обязателен для всех запросов" };
   }
   
-  // Проверка на закрывающие скобки
+  // Check for closing brackets
   const openBraces = (input.match(/\{/g) || []).length;
   const closeBraces = (input.match(/\}/g) || []).length;
   if (openBraces !== closeBraces) {
