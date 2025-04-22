@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import TrainerHeader from "@/components/TrainerHeader";
 import TrainerFooter from "@/components/TrainerFooter";
@@ -5,7 +6,6 @@ import TrainerTaskNav from "@/components/TrainerTaskNav";
 import GraphQLEditor from "@/components/GraphQLEditor";
 import GraphQLResult from "@/components/GraphQLResult";
 import AvailableUsers from "@/components/AvailableUsers";
-import { orders } from "@/data/orders-mock";
 import { users } from "@/data/users-mock";
 import { tasks } from "@/data/tasks";
 import { validateGQL, validateUserId } from "@/utils/graphql-validate";
@@ -23,6 +23,7 @@ export default function Index() {
   const [result, setResult] = React.useState<unknown | null>(null);
   const [isSandboxMode, setIsSandboxMode] = React.useState(false);
   const [isTaskInvalid, setIsTaskInvalid] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const task = tasks[current];
 
@@ -32,9 +33,7 @@ export default function Index() {
     setIsTaskInvalid(false);
     // If already solved and there is an answer - show the result
     if (correct[current] && answers[current]) {
-      setResult(
-        task.getExpectedData(orders)
-      );
+      executeGraphQLQuery(answers[current]);
     }
   }, [current, isSandboxMode]);
 
@@ -45,6 +44,37 @@ export default function Index() {
     setResult(null);
     setIsTaskInvalid(false);
   };
+
+  // Execute GraphQL query against the server
+  async function executeGraphQLQuery(query: string) {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: query,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (data.errors) {
+        setError(data.errors[0]?.message || 'Произошла ошибка при выполнении запроса');
+        setResult(null);
+      } else {
+        setResult(data);
+        setError(undefined);
+      }
+    } catch (err) {
+      setError(`Ошибка при выполнении запроса: ${err.message}`);
+      setResult(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   // Validate arguments in the query
   const validateArguments = (query: string): { valid: boolean; error?: string } => {
@@ -74,7 +104,7 @@ export default function Index() {
   };
 
   // Run query handler
-  function handleRun() {
+  async function handleRun() {
     setError(undefined);
     setIsTaskInvalid(false);
     
@@ -97,33 +127,21 @@ export default function Index() {
       }
     }
 
-    // In sandbox mode or for users query, just show the query result
-    if (isSandboxMode || val.includes("users")) {
-      try {
-        // Simple simulation of query processing on the client
-        if (val.includes("users")) {
-          // For users query, directly use the imported users data
-          setResult(users);
-        } else if (val.match(/{\s*orders\s*\(/)) {
-          // For orders query, return our mock orders data
-          setResult(orders);
-        } else {
-          setError("Запрос должен содержать { orders(...) } или { users }");
-        }
-      } catch (err) {
-        setError(String(err));
-      }
+    // Execute the GraphQL query against our server
+    await executeGraphQLQuery(val);
+    
+    // In sandbox mode, just show the query result without validating
+    if (isSandboxMode) {
       return;
     }
-
-    // Additional validation for task structure
+    
+    // For task mode, check if the query matches the task requirements
     if (!correct[current] && !task.validate(val)) {
-      setResult(task.getInvalidData(orders));
       setIsTaskInvalid(true);
       return;
     }
     
-    // Success!
+    // Success! Mark task as completed
     if (!correct[current]) {
       const newCorrect = [...correct];
       newCorrect[current] = true;
@@ -133,9 +151,6 @@ export default function Index() {
       newAnswers[current] = val;
       setAnswers(newAnswers);
     }
-
-    setError(undefined);
-    setResult(task.getExpectedData(orders));
   }
 
   function handleEditorChange(text: string) {

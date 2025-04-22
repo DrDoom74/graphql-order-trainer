@@ -7,6 +7,8 @@ import { createYoga } from "graphql-yoga";
 import { orders } from './src/data/orders-mock';
 import { users } from './src/data/users-mock';
 import { makeExecutableSchema } from '@graphql-tools/schema';
+import graphqlFields from 'graphql-fields';
+import { pick } from 'lodash';
 import type { ViteDevServer, PreviewServer } from 'vite';
 
 const typeDefs = /* GraphQL */ `
@@ -52,7 +54,7 @@ const typeDefs = /* GraphQL */ `
 
 const resolvers = {
   Query: {
-    orders: (_: unknown, { userId, limit, offset }: { userId: string, limit?: number, offset?: number }) => {
+    orders: (_, { userId, limit, offset }, context, info) => {
       console.log('GraphQL Query received:', { userId, limit, offset });
 
       // Check if userId exists
@@ -61,6 +63,9 @@ const resolvers = {
         throw new Error(`Пользователь с id '${userId}' не найден`);
       }
 
+      // Get requested fields
+      const fields = graphqlFields(info);
+      
       let filteredOrders = orders;
 
       if (offset !== undefined) {
@@ -71,10 +76,41 @@ const resolvers = {
         filteredOrders = filteredOrders.slice(0, limit);
       }
 
-      return filteredOrders;
+      // Return only requested fields
+      return filteredOrders.map(order => {
+        // Handle nested fields
+        const result = {};
+        
+        Object.keys(fields).forEach(field => {
+          if (field === 'items' && 'items' in fields) {
+            // Handle items selection
+            result['items'] = order.items.map(item => 
+              pick(item, Object.keys(fields.items))
+            );
+          } else if (field === 'delivery' && 'delivery' in fields) {
+            // Handle delivery selection and its nested address
+            result['delivery'] = { ...pick(order.delivery, Object.keys(fields.delivery)) };
+            
+            if ('address' in fields.delivery) {
+              result['delivery']['address'] = pick(
+                order.delivery.address, 
+                Object.keys(fields.delivery.address)
+              );
+            }
+          } else {
+            // Handle top-level fields
+            result[field] = order[field];
+          }
+        });
+        
+        return result;
+      });
     },
-    users: () => {
-      return users;
+    users: (_, args, context, info) => {
+      // Get requested fields
+      const fields = graphqlFields(info);
+      // Return only requested fields
+      return users.map(user => pick(user, Object.keys(fields)));
     }
   },
 };
