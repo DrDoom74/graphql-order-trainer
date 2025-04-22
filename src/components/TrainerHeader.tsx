@@ -1,13 +1,17 @@
 
-import { ArrowRight, Link } from "lucide-react";
+import { ArrowRight, HelpCircle } from "lucide-react";
 import * as React from "react";
 import SchemaDialog from "./SchemaDialog";
-import ApiUriDialog from "./ApiUriDialog";
+import HintDialog from "./HintDialog";
 import { Button } from "@/components/ui/button";
 
-export default function TrainerHeader({ onLinkClick }: { onLinkClick?: () => void }) {
+export default function TrainerHeader({ onLinkClick, onToggleSandbox, isSandboxMode }: { 
+  onLinkClick?: () => void,
+  onToggleSandbox?: () => void,
+  isSandboxMode?: boolean
+}) {
   const [schemaOpen, setSchemaOpen] = React.useState(false);
-  const [apiUriOpen, setApiUriOpen] = React.useState(false);
+  const [hintOpen, setHintOpen] = React.useState(false);
 
   return (
     <header className="bg-white flex items-center justify-between px-4 py-2 border-b border-gray-200 gap-4 flex-wrap sm:flex-nowrap relative">
@@ -28,11 +32,22 @@ export default function TrainerHeader({ onLinkClick }: { onLinkClick?: () => voi
           type="button"
           variant="outline"
           className="items-center gap-1 !px-3 py-2"
-          onClick={() => setApiUriOpen(true)}
+          onClick={() => setHintOpen(true)}
         >
-          <span><Link className="inline w-4 h-4" /></span>
-          <span className="hidden sm:inline">API URI</span>
+          <HelpCircle className="inline w-4 h-4" />
+          <span className="hidden sm:inline">Подсказка</span>
         </Button>
+        {onToggleSandbox && (
+          <Button
+            type="button"
+            variant={isSandboxMode ? "default" : "outline"}
+            className="items-center gap-1 !px-3 py-2"
+            onClick={onToggleSandbox}
+          >
+            <span role="img" aria-label="sandbox" className="text-lg">🧪</span>
+            <span className="hidden sm:inline">Песочница</span>
+          </Button>
+        )}
         <a
           href="https://boosty.to/aklimenko"
           target="_blank"
@@ -45,7 +60,7 @@ export default function TrainerHeader({ onLinkClick }: { onLinkClick?: () => voi
         </a>
       </nav>
       <SchemaDialog open={schemaOpen} onOpenChange={setSchemaOpen} />
-      <ApiUriDialog open={apiUriOpen} onOpenChange={setApiUriOpen} />
+      <HintDialog open={hintOpen} onOpenChange={setHintOpen} />
     </header>
   );
 }
