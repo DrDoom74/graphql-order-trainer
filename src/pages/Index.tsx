@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import TrainerHeader from "@/components/TrainerHeader";
 import TrainerFooter from "@/components/TrainerFooter";
@@ -7,6 +6,7 @@ import GraphQLEditor from "@/components/GraphQLEditor";
 import GraphQLResult from "@/components/GraphQLResult";
 import AvailableUsers from "@/components/AvailableUsers";
 import { orders } from "@/data/orders-mock";
+import { users } from "@/data/users-mock";
 import { tasks } from "@/data/tasks";
 import { validateGQL, validateUserId } from "@/utils/graphql-validate";
 
@@ -102,8 +102,7 @@ export default function Index() {
       try {
         // Simple simulation of query processing on the client
         if (val.includes("users")) {
-          // For users query, return our mock users data
-          const { users } = require('@/data/users-mock');
+          // For users query, directly use the imported users data
           setResult(users);
         } else if (val.match(/{\s*orders\s*\(/)) {
           // For orders query, return our mock orders data
