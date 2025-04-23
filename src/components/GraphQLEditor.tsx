@@ -16,6 +16,7 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
   const preRef = React.useRef<HTMLPreElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   
+  // Update syntax highlighting when value changes
   React.useEffect(() => {
     if (preRef.current) {
       preRef.current.textContent = value;
@@ -23,13 +24,26 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
     }
   }, [value]);
 
-  // Ensure text wrapping on resize
+  // Ensure text wrapping and scrolling on resize
   React.useEffect(() => {
     const handleResize = () => {
       if (preRef.current && textareaRef.current && containerRef.current) {
         // Force re-render of content to ensure proper wrapping
         preRef.current.textContent = value;
         Prism.highlightElement(preRef.current);
+        
+        // Sync scroll positions between pre and textarea
+        const syncScroll = () => {
+          if (preRef.current && textareaRef.current) {
+            preRef.current.scrollTop = textareaRef.current.scrollTop;
+            preRef.current.scrollLeft = textareaRef.current.scrollLeft;
+          }
+        };
+        
+        textareaRef.current.addEventListener('scroll', syncScroll);
+        return () => {
+          textareaRef.current?.removeEventListener('scroll', syncScroll);
+        };
       }
     };
     
@@ -39,6 +53,9 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
+    
+    // Initial call to handleResize
+    handleResize();
     
     return () => {
       resizeObserver.disconnect();
@@ -71,25 +88,45 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
     }
   };
   
+  // Sync scroll between textarea and pre elements
+  const handleScroll = () => {
+    if (preRef.current && textareaRef.current) {
+      preRef.current.scrollTop = textareaRef.current.scrollTop;
+      preRef.current.scrollLeft = textareaRef.current.scrollLeft;
+    }
+  };
+  
   return (
     <div className="flex flex-col gap-3">
       <div ref={containerRef} className="relative w-full">
         <pre 
           ref={preRef} 
-          className="language-graphql w-full absolute top-0 left-0 pointer-events-none rounded-lg border border-gray-200 px-4 py-3 text-base min-h-[240px] overflow-hidden font-mono bg-white whitespace-pre-wrap break-words"
-          style={{ margin: 0, wordWrap: "break-word", overflowWrap: "break-word" }}
+          className="language-graphql w-full absolute top-0 left-0 pointer-events-none rounded-lg border border-gray-200 px-4 py-3 text-base min-h-[240px] overflow-auto font-mono bg-white whitespace-pre-wrap break-words"
+          style={{ 
+            margin: 0, 
+            wordWrap: "break-word", 
+            overflowWrap: "break-word",
+            overflowY: "auto",
+            maxHeight: "100%"
+          }}
         />
         <textarea
           ref={textareaRef}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
+          onScroll={handleScroll}
           disabled={disabled}
           rows={10}
           spellCheck={false}
-          className="w-full rounded-lg border border-gray-200 px-4 py-3 font-mono text-base resize-vertical min-h-[240px] focus:ring-2 focus:ring-blue-400 outline-none text-transparent bg-transparent whitespace-pre-wrap break-words"
+          className="w-full rounded-lg border border-gray-200 px-4 py-3 font-mono text-base resize-vertical min-h-[240px] focus:ring-2 focus:ring-blue-400 outline-none text-transparent bg-transparent whitespace-pre-wrap break-words overflow-auto"
           placeholder="Введите GraphQL-запрос..."
-          style={{ caretColor: "#000000", wordWrap: "break-word", overflowWrap: "break-word" }}
+          style={{ 
+            caretColor: "#000000", 
+            wordWrap: "break-word", 
+            overflowWrap: "break-word",
+            overflowY: "auto"
+          }}
           autoFocus
         />
       </div>
