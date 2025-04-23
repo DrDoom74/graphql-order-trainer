@@ -32,18 +32,16 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
         preRef.current.textContent = value;
         Prism.highlightElement(preRef.current);
         
-        // Sync scroll positions between pre and textarea
-        const syncScroll = () => {
-          if (preRef.current && textareaRef.current) {
-            preRef.current.scrollTop = textareaRef.current.scrollTop;
-            preRef.current.scrollLeft = textareaRef.current.scrollLeft;
-          }
-        };
-        
-        textareaRef.current.addEventListener('scroll', syncScroll);
-        return () => {
-          textareaRef.current?.removeEventListener('scroll', syncScroll);
-        };
+        // Initial sync of scroll position
+        syncScroll();
+      }
+    };
+    
+    // Sync scroll positions between pre and textarea
+    const syncScroll = () => {
+      if (preRef.current && textareaRef.current) {
+        preRef.current.scrollTop = textareaRef.current.scrollTop;
+        preRef.current.scrollLeft = textareaRef.current.scrollLeft;
       }
     };
     
@@ -54,11 +52,17 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
       resizeObserver.observe(containerRef.current);
     }
     
+    // Add scroll event listener
+    if (textareaRef.current) {
+      textareaRef.current.addEventListener('scroll', syncScroll);
+    }
+    
     // Initial call to handleResize
     handleResize();
     
     return () => {
       resizeObserver.disconnect();
+      textareaRef.current?.removeEventListener('scroll', syncScroll);
     };
   }, [value]);
 

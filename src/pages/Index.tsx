@@ -53,20 +53,35 @@ export default function Index() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           query: query,
         }),
       });
 
-      const data = await response.json();
-      
-      if (data.errors) {
-        setError(data.errors[0]?.message || 'Произошла ошибка при выполнении запроса');
+      // Check if response is OK before trying to parse JSON
+      if (!response.ok) {
+        const errorText = await response.text();
+        setError(`Ошибка сервера: ${response.status} ${response.statusText}. ${errorText.substring(0, 100)}`);
         setResult(null);
-      } else {
-        setResult(data);
-        setError(undefined);
+        return;
+      }
+      
+      // Try to parse the JSON response
+      try {
+        const data = await response.json();
+        
+        if (data.errors) {
+          setError(data.errors[0]?.message || 'Произошла ошибка при выполнении запроса');
+          setResult(null);
+        } else {
+          setResult(data);
+          setError(undefined);
+        }
+      } catch (jsonError) {
+        setError(`Ошибка при разборе ответа: ${jsonError.message}`);
+        setResult(null);
       }
     } catch (err) {
       setError(`Ошибка при выполнении запроса: ${err.message}`);
