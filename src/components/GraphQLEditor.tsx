@@ -92,14 +92,6 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
     }
   };
   
-  // Sync scroll between textarea and pre elements
-  const handleScroll = () => {
-    if (preRef.current && textareaRef.current) {
-      preRef.current.scrollTop = textareaRef.current.scrollTop;
-      preRef.current.scrollLeft = textareaRef.current.scrollLeft;
-    }
-  };
-  
   return (
     <div className="flex flex-col gap-3">
       <div ref={containerRef} className="relative w-full">
@@ -119,7 +111,6 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          onScroll={handleScroll}
           disabled={disabled}
           rows={10}
           spellCheck={false}

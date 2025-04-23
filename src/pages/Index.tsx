@@ -59,18 +59,33 @@ export default function Index() {
           query: query,
         }),
       });
-
+      
       // Check if response is OK before trying to parse JSON
       if (!response.ok) {
         const errorText = await response.text();
-        setError(`Ошибка сервера: ${response.status} ${response.statusText}. ${errorText.substring(0, 100)}`);
+        const errorMessage = errorText.includes('<!DOCTYPE') 
+          ? 'Ошибка сервера: возвращен HTML вместо JSON. Возможно, проблема с соединением.' 
+          : `Ошибка сервера: ${response.status} ${response.statusText}. ${errorText.substring(0, 100)}`;
+        setError(errorMessage);
         setResult(null);
+        setIsLoading(false);
         return;
       }
       
-      // Try to parse the JSON response
+      // Get raw text first to check if it's not HTML
+      const rawText = await response.text();
+      
+      // Check if the response starts with HTML
+      if (rawText.trim().startsWith('<!DOCTYPE') || rawText.trim().startsWith('<html')) {
+        setError('Ошибка: получен HTML вместо JSON. Возможно, проблема с соединением или сервером.');
+        setResult(null);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Try to parse the JSON response from text
       try {
-        const data = await response.json();
+        const data = JSON.parse(rawText);
         
         if (data.errors) {
           setError(data.errors[0]?.message || 'Произошла ошибка при выполнении запроса');
@@ -80,8 +95,9 @@ export default function Index() {
           setError(undefined);
         }
       } catch (jsonError) {
-        setError(`Ошибка при разборе ответа: ${jsonError.message}`);
+        setError(`Ошибка при разборе ответа: ${jsonError.message || 'Invalid JSON'}`);
         setResult(null);
+        console.error('Raw response causing parse error:', rawText.substring(0, 200) + '...');
       }
     } catch (err) {
       setError(`Ошибка при выполнении запроса: ${err.message}`);
@@ -256,7 +272,7 @@ export default function Index() {
             <GraphQLEditor
               value={answers[isSandboxMode ? 0 : current]}
               onChange={handleEditorChange}
-              disabled={false} // No longer disabling after completion
+              disabled={isLoading} 
               onExecute={handleRun}
             />
           </div>
