@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import TrainerHeader from "@/components/TrainerHeader";
 import TrainerFooter from "@/components/TrainerFooter";
@@ -49,6 +48,8 @@ export default function Index() {
   async function executeGraphQLQuery(query: string) {
     setIsLoading(true);
     try {
+      console.log('Executing GraphQL query:', query);
+      
       const response = await fetch('/api/graphql', {
         method: 'POST',
         headers: {
@@ -58,8 +59,20 @@ export default function Index() {
           query: query,
         }),
       });
-
+      
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('API response error:', text);
+        setError(`Ошибка сервера: ${response.status} ${response.statusText}`);
+        setResult(null);
+        setIsLoading(false);
+        return;
+      }
+      
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (data.errors) {
         setError(data.errors[0]?.message || 'Произошла ошибка при выполнении запроса');
@@ -69,6 +82,7 @@ export default function Index() {
         setError(undefined);
       }
     } catch (err) {
+      console.error('Fetch error:', err);
       setError(`Ошибка при выполнении запроса: ${err.message}`);
       setResult(null);
     } finally {
