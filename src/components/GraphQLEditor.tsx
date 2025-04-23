@@ -53,7 +53,7 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
       <div className="relative w-full">
         <pre 
           ref={preRef} 
-          className="language-graphql w-full absolute top-0 left-0 pointer-events-none rounded-lg border border-gray-200 px-4 py-3 text-base min-h-[240px] overflow-hidden font-mono bg-white"
+          className="language-graphql w-full absolute top-0 left-0 pointer-events-none rounded-lg border border-gray-200 px-4 py-3 text-base min-h-[240px] overflow-hidden font-mono bg-white whitespace-pre-wrap break-words"
           style={{ margin: 0 }}
         />
         <textarea
@@ -64,7 +64,7 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
           disabled={disabled}
           rows={10}
           spellCheck={false}
-          className="w-full rounded-lg border border-gray-200 px-4 py-3 font-mono text-base resize-vertical min-h-[240px] focus:ring-2 focus:ring-blue-400 outline-none text-transparent bg-transparent"
+          className="w-full rounded-lg border border-gray-200 px-4 py-3 font-mono text-base resize-vertical min-h-[240px] focus:ring-2 focus:ring-blue-400 outline-none text-transparent bg-transparent whitespace-pre-wrap break-words"
           placeholder="Введите GraphQL-запрос..."
           style={{ caretColor: "#000000" }}
           autoFocus
@@ -80,3 +80,4 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
     </div>
   );
 }
+
