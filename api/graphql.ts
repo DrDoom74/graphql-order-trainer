@@ -6,7 +6,6 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import graphqlFields from 'graphql-fields';
 import lodash from 'lodash';
 import type { GraphQLResolveInfo } from 'graphql';
-import { createServer as createHttpServer } from 'node:http';
 
 const { pick } = lodash;
 
@@ -161,7 +160,7 @@ const resolvers = {
 // Create executable schema
 const schema = makeExecutableSchema({ typeDefs, resolvers });
 
-// Create a GraphQL server that returns JSON responses
+// Create a standalone GraphQL server that returns JSON responses
 const server = createYoga({
   schema,
   // Configure GraphQL server with proper options for API behavior
@@ -169,35 +168,16 @@ const server = createYoga({
     origin: '*',
     credentials: true,
     methods: ['POST', 'GET', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Content-Length'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   },
+  // Enable introspection for tools like Postman
   graphiql: false,
   landingPage: false,
   maskedErrors: false,
-  logging: {
-    debug: (...args) => console.log('GraphQL Debug:', ...args),
-    info: (...args) => console.log('GraphQL Info:', ...args),
-    warn: (...args) => console.log('GraphQL Warning:', ...args),
-    error: (...args) => console.error('GraphQL Error:', ...args),
-  },
 });
 
-// Export the config for serverless environments
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
-// Handle request-response correctly
-export const graphqlHandler = (req: any, res: any) => {
-  // Use node's http server to avoid type issues
-  const httpServer = createHttpServer();
-  httpServer.on('request', (nodeReq, nodeRes) => {
-    server(nodeReq, nodeRes);
-  });
-  httpServer.emit('request', req, res);
-};
+// Export the handler function
+export const graphqlHandler = server;
 
 // Export the GraphQL server for Vite middleware integration
 export default server;

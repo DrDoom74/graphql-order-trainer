@@ -7,8 +7,6 @@ import { users } from './data/users-mock';
 import graphqlFields from 'graphql-fields';
 import lodash from 'lodash';
 import type { GraphQLResolveInfo } from 'graphql';
-import path from 'path';
-import { createServer as createHttpServer } from 'http';
 
 const { pick } = lodash;
 
@@ -181,34 +179,11 @@ const yoga = createYoga({
 export function createServer() {
   const app = express();
   
-  // Handle GraphQL requests properly
-  app.use('/api/graphql', express.json(), (req, res, next) => {
-    // Debug logs to help troubleshoot
-    console.log('GraphQL API request received:', {
-      method: req.method,
-      path: req.path,
-      body: req.body
-    });
-    
-    // Use http server to properly handle yoga requests
-    const httpServer = createHttpServer();
-    httpServer.on('request', (nodeReq, nodeRes) => {
-      yoga(nodeReq, nodeRes);
-    });
-    httpServer.emit('request', req, res);
-  });
+  // Mount GraphQL middleware
+  app.use('/api/graphql', yoga);
   
   // Serve static files from dist directory in production
   app.use(express.static('dist'));
-  
-  // This is crucial - handle all routes in SPA
-  app.get('*', (req, res) => {
-    // Make sure this doesn't handle api/graphql requests
-    if (req.path.includes('/api/graphql')) {
-      return; // Let the yoga middleware handle this
-    }
-    res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
-  });
   
   return app;
 }
