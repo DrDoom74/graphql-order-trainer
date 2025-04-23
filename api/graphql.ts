@@ -160,7 +160,7 @@ const resolvers = {
 // Create executable schema
 const schema = makeExecutableSchema({ typeDefs, resolvers });
 
-// Create a standalone GraphQL server that returns JSON responses
+// Create a GraphQL server that returns JSON responses
 const server = createYoga({
   schema,
   // Configure GraphQL server with proper options for API behavior
@@ -170,11 +170,17 @@ const server = createYoga({
     methods: ['POST', 'GET', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   },
-  // Enable introspection for tools like Postman
   graphiql: false,
   landingPage: false,
   maskedErrors: false,
 });
+
+// Export the handler function for serverless environments
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 // Export the handler function
 export const graphqlHandler = server;

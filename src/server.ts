@@ -7,6 +7,7 @@ import { users } from './data/users-mock';
 import graphqlFields from 'graphql-fields';
 import lodash from 'lodash';
 import type { GraphQLResolveInfo } from 'graphql';
+import path from 'path';
 
 const { pick } = lodash;
 
@@ -179,11 +180,16 @@ const yoga = createYoga({
 export function createServer() {
   const app = express();
   
-  // Mount GraphQL middleware
+  // Mount GraphQL middleware BEFORE static files
   app.use('/api/graphql', yoga);
   
   // Serve static files from dist directory in production
   app.use(express.static('dist'));
+  
+  // This is crucial - handle all routes in SPA
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+  });
   
   return app;
 }
