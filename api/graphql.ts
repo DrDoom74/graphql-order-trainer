@@ -168,14 +168,20 @@ const server = createYoga({
     origin: '*',
     credentials: true,
     methods: ['POST', 'GET', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Content-Length'],
   },
   graphiql: false,
   landingPage: false,
   maskedErrors: false,
+  logging: {
+    debug: (...args) => console.log('GraphQL Debug:', ...args),
+    info: (...args) => console.log('GraphQL Info:', ...args),
+    warn: (...args) => console.log('GraphQL Warning:', ...args),
+    error: (...args) => console.error('GraphQL Error:', ...args),
+  },
 });
 
-// Export the handler function for serverless environments
+// Export the config for serverless environments
 export const config = {
   api: {
     bodyParser: false,

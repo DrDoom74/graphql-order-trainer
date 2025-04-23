@@ -174,6 +174,12 @@ const yoga = createYoga({
   graphiql: false,
   landingPage: false,
   maskedErrors: false,
+  logging: {
+    debug: (...args) => console.log('GraphQL Debug:', ...args),
+    info: (...args) => console.log('GraphQL Info:', ...args),
+    warn: (...args) => console.log('GraphQL Warning:', ...args),
+    error: (...args) => console.error('GraphQL Error:', ...args),
+  },
 });
 
 export default defineConfig(({ mode }) => ({
@@ -187,10 +193,27 @@ export default defineConfig(({ mode }) => ({
     {
       name: 'graphql-yoga-handler',
       configureServer(server: ViteDevServer) {
-        server.middlewares.use('/api/graphql', yoga);
+        // For development server
+        server.middlewares.use((req, res, next) => {
+          if (req.url && req.url.startsWith('/api/graphql')) {
+            console.log('Dev server: GraphQL request received');
+            // Make sure we parse the body correctly
+            yoga(req, res, next);
+          } else {
+            next();
+          }
+        });
       },
       configurePreviewServer(server: PreviewServer) {
-        server.middlewares.use('/api/graphql', yoga);
+        // For preview server
+        server.middlewares.use((req, res, next) => {
+          if (req.url && req.url.startsWith('/api/graphql')) {
+            console.log('Preview server: GraphQL request received');
+            yoga(req, res, next);
+          } else {
+            next();
+          }
+        });
       },
     }
   ].filter(Boolean),
