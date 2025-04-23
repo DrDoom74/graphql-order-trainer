@@ -14,12 +14,35 @@ interface Props {
 export default function GraphQLEditor({ value, onChange, disabled, onExecute }: Props) {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const preRef = React.useRef<HTMLPreElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   
   React.useEffect(() => {
     if (preRef.current) {
       preRef.current.textContent = value;
       Prism.highlightElement(preRef.current);
     }
+  }, [value]);
+
+  // Ensure text wrapping on resize
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (preRef.current && textareaRef.current && containerRef.current) {
+        // Force re-render of content to ensure proper wrapping
+        preRef.current.textContent = value;
+        Prism.highlightElement(preRef.current);
+      }
+    };
+    
+    // Create a resize observer to watch for container size changes
+    const resizeObserver = new ResizeObserver(handleResize);
+    
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
   }, [value]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -50,11 +73,11 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
   
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative w-full">
+      <div ref={containerRef} className="relative w-full">
         <pre 
           ref={preRef} 
           className="language-graphql w-full absolute top-0 left-0 pointer-events-none rounded-lg border border-gray-200 px-4 py-3 text-base min-h-[240px] overflow-hidden font-mono bg-white whitespace-pre-wrap break-words"
-          style={{ margin: 0 }}
+          style={{ margin: 0, wordWrap: "break-word", overflowWrap: "break-word" }}
         />
         <textarea
           ref={textareaRef}
@@ -66,7 +89,7 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
           spellCheck={false}
           className="w-full rounded-lg border border-gray-200 px-4 py-3 font-mono text-base resize-vertical min-h-[240px] focus:ring-2 focus:ring-blue-400 outline-none text-transparent bg-transparent whitespace-pre-wrap break-words"
           placeholder="Введите GraphQL-запрос..."
-          style={{ caretColor: "#000000" }}
+          style={{ caretColor: "#000000", wordWrap: "break-word", overflowWrap: "break-word" }}
           autoFocus
         />
       </div>
@@ -80,4 +103,3 @@ export default function GraphQLEditor({ value, onChange, disabled, onExecute }: 
     </div>
   );
 }
-
