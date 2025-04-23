@@ -11,6 +11,7 @@ import graphqlFields from 'graphql-fields';
 import lodash from 'lodash';
 import type { ViteDevServer, PreviewServer } from 'vite';
 import type { GraphQLResolveInfo } from 'graphql';
+import { createServer as createNodeServer } from 'node:http';
 
 const { pick } = lodash;
 
@@ -197,8 +198,11 @@ export default defineConfig(({ mode }) => ({
         server.middlewares.use((req, res, next) => {
           if (req.url && req.url.startsWith('/api/graphql')) {
             console.log('Dev server: GraphQL request received');
-            // Make sure we parse the body correctly
-            yoga(req, res, next);
+            // Create a proper implementation using an HTTP server
+            const httpServer = createNodeServer((req, res) => {
+              yoga(req, res);
+            });
+            httpServer.emit('request', req, res);
           } else {
             next();
           }
@@ -209,7 +213,11 @@ export default defineConfig(({ mode }) => ({
         server.middlewares.use((req, res, next) => {
           if (req.url && req.url.startsWith('/api/graphql')) {
             console.log('Preview server: GraphQL request received');
-            yoga(req, res, next);
+            // Create a proper implementation using an HTTP server
+            const httpServer = createNodeServer((req, res) => {
+              yoga(req, res);
+            });
+            httpServer.emit('request', req, res);
           } else {
             next();
           }

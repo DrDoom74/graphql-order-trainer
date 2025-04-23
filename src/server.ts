@@ -8,6 +8,7 @@ import graphqlFields from 'graphql-fields';
 import lodash from 'lodash';
 import type { GraphQLResolveInfo } from 'graphql';
 import path from 'path';
+import { createServer } from 'http';
 
 const { pick } = lodash;
 
@@ -180,7 +181,7 @@ const yoga = createYoga({
 export function createServer() {
   const app = express();
   
-  // Explicitly parse JSON for /api/graphql route
+  // Handle GraphQL requests properly
   app.use('/api/graphql', express.json(), (req, res, next) => {
     // Debug logs to help troubleshoot
     console.log('GraphQL API request received:', {
@@ -188,8 +189,13 @@ export function createServer() {
       path: req.path,
       body: req.body
     });
-    next();
-  }, yoga);
+    
+    // Use http server to properly handle yoga requests
+    const httpServer = createServer((nodeReq, nodeRes) => {
+      yoga(nodeReq, nodeRes);
+    });
+    httpServer.emit('request', req, res);
+  });
   
   // Serve static files from dist directory in production
   app.use(express.static('dist'));

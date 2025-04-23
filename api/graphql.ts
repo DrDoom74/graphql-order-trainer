@@ -6,6 +6,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import graphqlFields from 'graphql-fields';
 import lodash from 'lodash';
 import type { GraphQLResolveInfo } from 'graphql';
+import { createServer } from 'node:http';
 
 const { pick } = lodash;
 
@@ -188,8 +189,14 @@ export const config = {
   },
 };
 
-// Export the handler function
-export const graphqlHandler = server;
+// Handle request-response correctly
+export const graphqlHandler = (req: any, res: any) => {
+  // Use node's http server to avoid type issues
+  const httpServer = createServer((req, res) => {
+    server(req, res);
+  });
+  httpServer.emit('request', req, res);
+};
 
 // Export the GraphQL server for Vite middleware integration
 export default server;
