@@ -8,7 +8,7 @@ import graphqlFields from 'graphql-fields';
 import lodash from 'lodash';
 import type { GraphQLResolveInfo } from 'graphql';
 import path from 'path';
-import { createServer } from 'http';
+import { createServer as createHttpServer } from 'http';
 
 const { pick } = lodash;
 
@@ -191,7 +191,8 @@ export function createServer() {
     });
     
     // Use http server to properly handle yoga requests
-    const httpServer = createServer((nodeReq, nodeRes) => {
+    const httpServer = createHttpServer();
+    httpServer.on('request', (nodeReq, nodeRes) => {
       yoga(nodeReq, nodeRes);
     });
     httpServer.emit('request', req, res);

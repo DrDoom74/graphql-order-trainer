@@ -1,4 +1,3 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -11,23 +10,19 @@ import graphqlFields from 'graphql-fields';
 import lodash from 'lodash';
 import type { ViteDevServer, PreviewServer } from 'vite';
 import type { GraphQLResolveInfo } from 'graphql';
-import { createServer as createNodeServer } from 'node:http';
+import { createServer as createHttpServer } from 'node:http';
 
 const { pick } = lodash;
 
-// Define types for resolver parameters and context
 interface ResolverContext {
-  // Add any context properties here if needed
 }
 
-// Define the shape of order items
 interface OrderItem {
   name: string;
   quantity: number;
   price: number;
 }
 
-// Define the shape of address
 interface Address {
   street: string;
   city: string;
@@ -35,7 +30,6 @@ interface Address {
   country: string;
 }
 
-// Define the shape of delivery
 interface Delivery {
   delivered: boolean;
   deliveryDate: string | null;
@@ -43,7 +37,6 @@ interface Delivery {
   address: Address;
 }
 
-// Define the shape of an order
 interface Order {
   id: string;
   date: string;
@@ -53,7 +46,6 @@ interface Order {
   delivery: Delivery;
 }
 
-// Define the shape of a user
 interface User {
   id: string;
   name: string;
@@ -105,13 +97,11 @@ const resolvers = {
     orders: (_: unknown, { userId, limit, offset }: { userId: string; limit?: number; offset?: number }, context: ResolverContext, info: GraphQLResolveInfo) => {
       console.log('GraphQL Query received:', { userId, limit, offset });
 
-      // Check if userId exists
       const userExists = users.some(user => user.id === userId);
       if (!userExists) {
         throw new Error(`Пользователь с id '${userId}' не найден`);
       }
 
-      // Get requested fields
       const fields = graphqlFields(info) as Record<string, any>;
       
       let filteredOrders = orders;
@@ -124,19 +114,15 @@ const resolvers = {
         filteredOrders = filteredOrders.slice(0, limit);
       }
 
-      // Return only requested fields
       return filteredOrders.map(order => {
-        // Handle nested fields
         const result: Record<string, any> = {};
         
         Object.keys(fields).forEach(field => {
           if (field === 'items' && 'items' in fields) {
-            // Handle items selection
             result['items'] = order.items.map(item => 
               pick(item, Object.keys(fields.items))
             );
           } else if (field === 'delivery' && 'delivery' in fields) {
-            // Handle delivery selection and its nested address
             result['delivery'] = { ...pick(order.delivery, Object.keys(fields.delivery)) };
             
             if ('address' in fields.delivery) {
@@ -146,7 +132,6 @@ const resolvers = {
               );
             }
           } else {
-            // Handle top-level fields
             result[field] = order[field as keyof Order];
           }
         });
@@ -155,9 +140,7 @@ const resolvers = {
       });
     },
     users: (_: unknown, args: unknown, context: ResolverContext, info: GraphQLResolveInfo) => {
-      // Get requested fields
       const fields = graphqlFields(info) as Record<string, any>;
-      // Return only requested fields
       return users.map(user => pick(user, Object.keys(fields)));
     }
   },
@@ -194,13 +177,12 @@ export default defineConfig(({ mode }) => ({
     {
       name: 'graphql-yoga-handler',
       configureServer(server: ViteDevServer) {
-        // For development server
         server.middlewares.use((req, res, next) => {
           if (req.url && req.url.startsWith('/api/graphql')) {
             console.log('Dev server: GraphQL request received');
-            // Create a proper implementation using an HTTP server
-            const httpServer = createNodeServer((req, res) => {
-              yoga(req, res);
+            const httpServer = createHttpServer();
+            httpServer.on('request', (nodeReq, nodeRes) => {
+              yoga(nodeReq, nodeRes);
             });
             httpServer.emit('request', req, res);
           } else {
@@ -209,13 +191,12 @@ export default defineConfig(({ mode }) => ({
         });
       },
       configurePreviewServer(server: PreviewServer) {
-        // For preview server
         server.middlewares.use((req, res, next) => {
           if (req.url && req.url.startsWith('/api/graphql')) {
             console.log('Preview server: GraphQL request received');
-            // Create a proper implementation using an HTTP server
-            const httpServer = createNodeServer((req, res) => {
-              yoga(req, res);
+            const httpServer = createHttpServer();
+            httpServer.on('request', (nodeReq, nodeRes) => {
+              yoga(nodeReq, nodeRes);
             });
             httpServer.emit('request', req, res);
           } else {

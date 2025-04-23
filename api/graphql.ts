@@ -6,7 +6,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import graphqlFields from 'graphql-fields';
 import lodash from 'lodash';
 import type { GraphQLResolveInfo } from 'graphql';
-import { createServer } from 'node:http';
+import { createServer as createHttpServer } from 'node:http';
 
 const { pick } = lodash;
 
@@ -192,8 +192,9 @@ export const config = {
 // Handle request-response correctly
 export const graphqlHandler = (req: any, res: any) => {
   // Use node's http server to avoid type issues
-  const httpServer = createServer((req, res) => {
-    server(req, res);
+  const httpServer = createHttpServer();
+  httpServer.on('request', (nodeReq, nodeRes) => {
+    server(nodeReq, nodeRes);
   });
   httpServer.emit('request', req, res);
 };
