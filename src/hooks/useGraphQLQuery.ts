@@ -10,16 +10,8 @@ export function useGraphQLQuery() {
       // Чтобы избежать кеширования предыдущих ответов, добавим случайный параметр
       const cacheBuster = `?nocache=${Date.now()}`;
       
-      // Определяем базовый URL для GraphQL API
-      let baseUrl = '';
-      
-      // В режиме разработки используем относительный путь
-      if (import.meta.env.DEV) {
-        baseUrl = '/api/graphql';
-      } else {
-        // В production используем путь от корня
-        baseUrl = `${window.location.origin}/api/graphql`;
-      }
+      // В режиме разработки всегда используем относительный путь
+      const baseUrl = '/api/graphql';
       
       console.log('GraphQL request to:', `${baseUrl}${cacheBuster}`);
       
