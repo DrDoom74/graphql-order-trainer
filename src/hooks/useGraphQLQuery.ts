@@ -7,16 +7,22 @@ export interface GraphQLResponse {
 export function useGraphQLQuery() {
   async function executeQuery(query: string): Promise<GraphQLResponse> {
     try {
-      const response = await fetch('/api/graphql', {
+      // Чтобы избежать кеширования предыдущих ответов, добавим случайный параметр
+      const cacheBuster = `?nocache=${Date.now()}`;
+      
+      const response = await fetch(`/api/graphql${cacheBuster}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          // Добавим заголовок для предотвращения кеширования
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         },
         body: JSON.stringify({ query }),
       });
       
-      // Check if response is OK before trying to parse JSON
+      // Проверим, что ответ успешный
       if (!response.ok) {
         const errorText = await response.text();
         const errorMessage = errorText.includes('<!DOCTYPE') 
@@ -25,17 +31,18 @@ export function useGraphQLQuery() {
         return { error: errorMessage };
       }
       
-      // Get raw text first to check if it's not HTML
+      // Получим сначала сырой текст, чтобы проверить, не HTML ли это
       const rawText = await response.text();
       
-      // Check if the response starts with HTML
+      // Проверим, не является ли ответ HTML
       if (rawText.trim().startsWith('<!DOCTYPE') || rawText.trim().startsWith('<html')) {
+        console.error('Получен HTML вместо JSON:', rawText.substring(0, 200));
         return { 
           error: 'Ошибка: получен HTML вместо JSON. Возможно, проблема с соединением или сервером.' 
         };
       }
       
-      // Try to parse the JSON response from text
+      // Попробуем разобрать JSON
       try {
         const data = JSON.parse(rawText);
         
@@ -46,13 +53,17 @@ export function useGraphQLQuery() {
         }
         
         return { data };
-      } catch (jsonError) {
+      } catch (jsonError: any) {
         console.error('Raw response causing parse error:', rawText.substring(0, 200) + '...');
+        console.error('JSON parse error:', jsonError);
+        
         return { 
           error: `Ошибка при разборе ответа: ${jsonError.message || 'Invalid JSON'}`
         };
       }
     } catch (err: any) {
+      console.error('GraphQL fetch error:', err);
+      
       return { 
         error: `Ошибка при выполнении запроса: ${err.message}`
       };
@@ -61,4 +72,3 @@ export function useGraphQLQuery() {
 
   return { executeQuery };
 }
-
