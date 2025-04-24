@@ -10,7 +10,15 @@ export function useGraphQLQuery() {
       // Чтобы избежать кеширования предыдущих ответов, добавим случайный параметр
       const cacheBuster = `?nocache=${Date.now()}`;
       
-      const response = await fetch(`/api/graphql${cacheBuster}`, {
+      // Убедимся, что URL правильный, в зависимости от среды и режима работы
+      const baseUrl = window.location.origin.includes('localhost') || 
+                      window.location.origin.includes('127.0.0.1') 
+                      ? '/api/graphql' 
+                      : `${window.location.origin}/api/graphql`;
+      
+      console.log('GraphQL request to:', `${baseUrl}${cacheBuster}`);
+      
+      const response = await fetch(`${baseUrl}${cacheBuster}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -24,7 +32,16 @@ export function useGraphQLQuery() {
       
       // Проверим, что ответ успешный
       if (!response.ok) {
+        console.error('GraphQL server response not OK:', response.status, response.statusText);
         const errorText = await response.text();
+        console.error('Error response body:', errorText.substring(0, 200));
+        
+        // Специальная обработка для 404
+        if (response.status === 404) {
+          console.error('GraphQL endpoint not found (404)');
+          return { error: `Ошибка сервера: 404. URL: ${baseUrl}. Сервер GraphQL не найден.` };
+        }
+        
         const errorMessage = errorText.includes('<!DOCTYPE') 
           ? 'Ошибка сервера: возвращен HTML вместо JSON. Возможно, проблема с соединением.' 
           : `Ошибка сервера: ${response.status} ${response.statusText}. ${errorText.substring(0, 100)}`;

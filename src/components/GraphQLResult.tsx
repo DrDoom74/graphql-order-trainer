@@ -3,6 +3,7 @@ import * as React from "react";
 import { Check } from "lucide-react";
 import Prism from "prismjs";
 import "prismjs/components/prism-json";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Props {
   result: unknown;
@@ -41,9 +42,17 @@ export default function GraphQLResult({ result, error, isTaskComplete, isTaskInv
           <div className="bg-red-50 p-2 rounded-md mb-2">
             Ошибка в запросе. Проверьте синтаксис или названия полей.
           </div>
-          <div className="text-sm text-red-800 bg-red-50 p-2 rounded-md font-normal">
+          <div className="text-sm text-red-800 bg-red-50 p-2 rounded-md font-normal whitespace-pre-wrap break-all">
             {error}
           </div>
+          
+          {error.includes('404') && (
+            <Alert variant="destructive" className="mt-2">
+              <AlertDescription>
+                Проблема с подключением к GraphQL серверу. Пожалуйста, убедитесь, что сервер запущен и доступен.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       )}
       
