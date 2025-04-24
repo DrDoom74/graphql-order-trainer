@@ -10,11 +10,16 @@ export function useGraphQLQuery() {
       // Чтобы избежать кеширования предыдущих ответов, добавим случайный параметр
       const cacheBuster = `?nocache=${Date.now()}`;
       
-      // Убедимся, что URL правильный, в зависимости от среды и режима работы
-      const baseUrl = window.location.origin.includes('localhost') || 
-                      window.location.origin.includes('127.0.0.1') 
-                      ? '/api/graphql' 
-                      : `${window.location.origin}/api/graphql`;
+      // Определяем базовый URL для GraphQL API
+      let baseUrl = '';
+      
+      // В режиме разработки используем относительный путь
+      if (import.meta.env.DEV) {
+        baseUrl = '/api/graphql';
+      } else {
+        // В production используем путь от корня
+        baseUrl = `${window.location.origin}/api/graphql`;
+      }
       
       console.log('GraphQL request to:', `${baseUrl}${cacheBuster}`);
       

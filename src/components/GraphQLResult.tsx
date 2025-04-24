@@ -49,7 +49,7 @@ export default function GraphQLResult({ result, error, isTaskComplete, isTaskInv
           {error.includes('404') && (
             <Alert variant="destructive" className="mt-2">
               <AlertDescription>
-                Проблема с подключением к GraphQL серверу. Пожалуйста, убедитесь, что сервер запущен и доступен.
+                Проблема с подключением к GraphQL серверу. Пожалуйста, проверьте, что сервер запущен и доступен по адресу <code>/api/graphql</code>.
               </AlertDescription>
             </Alert>
           )}
