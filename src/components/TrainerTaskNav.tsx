@@ -20,15 +20,14 @@ export default function TrainerTaskNav({ current, correctList, onPrev, onNext }:
       <div className="flex items-center gap-2">
         <button
           title="Назад"
-          className="px-3 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-xl disabled:opacity-50 transition"
+          className="px-3 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-xl transition"
           onClick={onPrev}
-          disabled={false}
         >
           <ArrowLeft />
         </button>
         <button
           title="Вперед"
-          className="px-3 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-xl disabled:opacity-50 transition"
+          className="px-3 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-xl transition"
           onClick={onNext}
         >
           <ArrowRight />
