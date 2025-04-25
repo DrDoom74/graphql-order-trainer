@@ -13,7 +13,12 @@ export const tasks: Task[] = [
     id: 1,
     title: "Получи список заказов пользователя с ID, датой и статусом заказа.",
     query: `{ orders(userId: "USER01") { id date status } }`,
-    validate: (input) => /orders\s*\(.+\)\s*{[^}]*id[^}]*date[^}]*status/s.test(input),
+    validate: (input) => /orders\s*\(.+\)\s*{[^}]*id[^}]*date[^}]*status/s.test(input) || 
+                        /orders\s*\(.+\)\s*{[^}]*id[^}]*status[^}]*date/s.test(input) || 
+                        /orders\s*\(.+\)\s*{[^}]*date[^}]*id[^}]*status/s.test(input) ||
+                        /orders\s*\(.+\)\s*{[^}]*date[^}]*status[^}]*id/s.test(input) ||
+                        /orders\s*\(.+\)\s*{[^}]*status[^}]*id[^}]*date/s.test(input) ||
+                        /orders\s*\(.+\)\s*{[^}]*status[^}]*date[^}]*id/s.test(input),
     getExpectedData: (orders) => ({
       data: {
         orders: orders.map((o) => ({
@@ -49,7 +54,8 @@ export const tasks: Task[] = [
     id: 3,
     title: "Выведи список товаров (items) первого заказа с количеством и ценой.",
     query: `{ orders(userId: "USER01") { items { quantity price } } }`,
-    validate: (input) => /orders\s*\(.+\)\s*{[^}]*items\s*{[^}]*quantity[^}]*price[^}]*}/s.test(input),
+    validate: (input) => /orders\s*\(.+\)\s*{[^}]*items\s*{[^}]*quantity[^}]*price[^}]*}/s.test(input) ||
+                        /orders\s*\(.+\)\s*{[^}]*items\s*{[^}]*price[^}]*quantity[^}]*}/s.test(input),
     getExpectedData: (orders) => ({
       data: { orders: [orders[0].items.map(({ quantity, price }) => ({ quantity, price }))] },
     }),
@@ -71,9 +77,10 @@ export const tasks: Task[] = [
   },
   {
     id: 5,
-    title: "Покажи тип доставки и дату, если доставка была завершена.",
-    query: `{ orders(userId: "USER01") { delivery { type deliveryDate } } }`,
-    validate: (input) => /orders\s*\(.+\)\s*{[^}]*delivery\s*{[^}]*type[^}]*deliveryDate[^}]*}/s.test(input),
+    title: "Покажи тип доставки и дату для доставленных заказов (используй фильтр delivered).",
+    query: `{ orders(userId: "USER01", delivered: true) { delivery { type deliveryDate } } }`,
+    validate: (input) => /orders\s*\(.+delivered\s*:\s*true.+\)\s*{[^}]*delivery\s*{[^}]*type[^}]*deliveryDate[^}]*}/s.test(input) ||
+                         /orders\s*\(.+delivered\s*:\s*true.+\)\s*{[^}]*delivery\s*{[^}]*deliveryDate[^}]*type[^}]*}/s.test(input),
     getExpectedData: (orders) => ({
       data: {
         orders: orders
@@ -103,7 +110,8 @@ export const tasks: Task[] = [
     id: 6,
     title: "Получи адрес доставки для второго заказа.",
     query: `{ orders(userId: "USER01") { delivery { address { street city zip country } } } }`,
-    validate: (input) => /orders\s*\(.+\)\s*{[^}]*delivery\s*{[^}]*address\s*{[^}]*street[^}]*city[^}]*zip[^}]*country[^}]*}/s.test(input),
+    validate: (input) => /orders\s*\(.+\)\s*{[^}]*delivery\s*{[^}]*address\s*{[^}]*street[^}]*city[^}]*zip[^}]*country[^}]*}/s.test(input) ||
+                         /orders\s*\(.+\)\s*{[^}]*delivery\s*{[^}]*address\s*{.*street.*city.*zip.*country.*}/s.test(input),
     getExpectedData: (orders) => ({
       data: {
         orders: [
@@ -142,20 +150,43 @@ export const tasks: Task[] = [
   {
     id: 8,
     title: "Получи 2 заказа, начиная с третьего (offset = 2, limit = 2).",
-    query: `{ orders(userId: "USER01", limit: 2, offset: 2) { id } }`,
-    validate: (input) => /orders\s*\(.+limit\s*:\s*2.*offset\s*:\s*2[^)]*\)/s.test(input),
+    query: `{ orders(userId: "USER01", limit: 2, offset: 2) { id date status } }`,
+    validate: (input) => /orders\s*\(.+limit\s*:\s*2.*offset\s*:\s*2[^)]*\)\s*{.*id.*date.*status.*}/s.test(input),
     getExpectedData: (orders) => ({
-      data: { orders: orders.slice(2, 4).map((o) => ({ id: o.id })) },
+      data: { 
+        orders: orders.slice(2, 4).map((o) => ({ 
+          id: o.id,
+          date: o.date,
+          status: o.status 
+        }))
+      },
     }),
     getInvalidData: (orders) => ({
-      data: { orders: orders.slice(2, 4).map((o) => ({ id: o.id })) },
+      data: { 
+        orders: orders.slice(2, 4).map((o) => ({ 
+          id: o.id,
+          date: o.date,
+          status: o.status 
+        }))
+      },
     }),
   },
   {
     id: 9,
     title: "Покажи все поля заказа, включая товары и доставку.",
     query: `{ orders(userId: "USER01") { id date status total items { name quantity price } delivery { delivered deliveryDate type address { street city zip country } } } }`,
-    validate: (input) => /orders\s*\(.+\)\s*{[^}]*id[^}]*date[^}]*status[^}]*total[^}]*items\s*{[^}]*name[^}]*quantity[^}]*price[^}]*}[^}]*delivery\s*{[^}]*delivered[^}]*deliveryDate[^}]*type[^}]*address\s*{[^}]*street[^}]*city[^}]*zip[^}]*country[^}]*}[^}]*}/s.test(input),
+    validate: (input) => {
+      // Check for required top-level fields
+      const hasTopFields = /orders\s*\(.+\)\s*{.*id.*date.*status.*total.*items.*delivery.*}/s.test(input);
+      // Check for required nested fields in items
+      const hasItemsFields = /items\s*{.*name.*quantity.*price.*}/s.test(input);
+      // Check for required nested fields in delivery
+      const hasDeliveryFields = /delivery\s*{.*delivered.*deliveryDate.*type.*address.*}/s.test(input);
+      // Check for required nested fields in address
+      const hasAddressFields = /address\s*{.*street.*city.*zip.*country.*}/s.test(input);
+      
+      return hasTopFields && hasItemsFields && hasDeliveryFields && hasAddressFields;
+    },
     getExpectedData: (orders) => ({
       data: { orders },
     }),
@@ -187,5 +218,40 @@ export const tasks: Task[] = [
       },
     }),
   },
+  {
+    id: 11,
+    title: "Выведи все заказы пользователя, доставленные в Казахстан. Отобрази поля id, date, delivery.address.country.",
+    query: `{ orders(userId: "USER01", country: "Kazakhstan") { id date delivery { address { country } } } }`,
+    validate: (input) => /orders\s*\(.+country\s*:\s*"Kazakhstan"[^)]*\)\s*{.*id.*date.*delivery\s*{.*address\s*{.*country.*}.*}.*}/s.test(input),
+    getExpectedData: (orders) => ({
+      data: {
+        orders: orders
+          .filter(o => o.delivery.address.country === "Kazakhstan")
+          .map(o => ({
+            id: o.id,
+            date: o.date,
+            delivery: {
+              address: {
+                country: o.delivery.address.country
+              }
+            }
+          }))
+      },
+    }),
+    getInvalidData: (orders) => ({
+      data: {
+        orders: orders
+          .filter(o => o.delivery.address.country === "Kazakhstan")
+          .map(o => ({
+            id: o.id,
+            date: o.date,
+            delivery: {
+              address: {
+                country: o.delivery.address.country
+              }
+            }
+          }))
+      },
+    }),
+  }
 ];
-

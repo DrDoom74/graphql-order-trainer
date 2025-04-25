@@ -1,7 +1,7 @@
 
 const graphqlOrdersSchema = `
 type Query {
-  orders(userId: ID!, limit: Int, offset: Int): [Order!]!
+  orders(userId: ID!, delivered: Boolean, country: String, limit: Int, offset: Int): [Order!]!
   users: [User!]!
 }
 

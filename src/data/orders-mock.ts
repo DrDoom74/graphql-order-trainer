@@ -6,9 +6,9 @@ export const orders = [
     status: "Delivered",
     total: 113.99,
     items: [
-      { name: "Сутки", quantity: 2, price: 10.91 },
-      { name: "Число", quantity: 1, price: 49.13 },
-      { name: "Тяжелый", quantity: 1, price: 76.12 },
+      { name: "Лейка садовая", quantity: 2, price: 10.91 },
+      { name: "Карандаш грифельный", quantity: 1, price: 49.13 },
+      { name: "Бумага офисная", quantity: 1, price: 76.12 },
     ],
     delivery: {
       delivered: true,
@@ -28,9 +28,9 @@ export const orders = [
     status: "Delivered",
     total: 53.92,
     items: [
-      { name: "Избегать", quantity: 1, price: 13.77 },
-      { name: "Школьный", quantity: 1, price: 65.29 },
-      { name: "Рай", quantity: 2, price: 28.69 },
+      { name: "Кружка чайная", quantity: 1, price: 13.77 },
+      { name: "Стул складной", quantity: 1, price: 65.29 },
+      { name: "Лампа настольная", quantity: 2, price: 28.69 },
     ],
     delivery: {
       delivered: true,
@@ -49,16 +49,16 @@ export const orders = [
     date: "2025-01-12",
     status: "Pending",
     total: 166.35,
-    items: [{ name: "Лететь", quantity: 3, price: 59.65 }],
+    items: [{ name: "Фоторамка деревянная", quantity: 3, price: 59.65 }],
     delivery: {
       delivered: false,
       deliveryDate: null,
       type: "Courier",
       address: {
-        street: "пр. Республиканский, д. 12 к. 4",
-        city: "д. Магас",
-        zip: "306440",
-        country: "Russia",
+        street: "ул. Абая, д. 45",
+        city: "Алматы",
+        zip: "050000",
+        country: "Kazakhstan",
       },
     },
   },
@@ -68,8 +68,8 @@ export const orders = [
     status: "Pending",
     total: 149.44,
     items: [
-      { name: "Ломать", quantity: 1, price: 30.31 },
-      { name: "Беспомощный", quantity: 1, price: 62.79 },
+      { name: "Подушка декоративная", quantity: 1, price: 30.31 },
+      { name: "Набор посуды", quantity: 1, price: 62.79 },
     ],
     delivery: {
       delivered: false,
@@ -89,9 +89,9 @@ export const orders = [
     status: "Delivered",
     total: 87.96,
     items: [
-      { name: "Белье", quantity: 3, price: 51.48 },
-      { name: "Ложиться", quantity: 3, price: 83.21 },
-      { name: "Народ", quantity: 3, price: 56.33 },
+      { name: "Полотенце банное", quantity: 3, price: 51.48 },
+      { name: "Зеркало настенное", quantity: 3, price: 83.21 },
+      { name: "Часы настенные", quantity: 3, price: 56.33 },
     ],
     delivery: {
       delivered: true,
@@ -111,19 +111,19 @@ export const orders = [
     status: "Pending",
     total: 74.47,
     items: [
-      { name: "Командир", quantity: 3, price: 15.66 },
-      { name: "Кпсс", quantity: 1, price: 91.25 },
-      { name: "Гулять", quantity: 2, price: 86.73 },
+      { name: "Чайник электрический", quantity: 3, price: 15.66 },
+      { name: "Ваза стеклянная", quantity: 1, price: 91.25 },
+      { name: "Фен для волос", quantity: 2, price: 86.73 },
     ],
     delivery: {
       delivered: false,
       deliveryDate: null,
       type: "Pickup Point",
       address: {
-        street: "алл. Сиреневая, д. 1 стр. 98",
-        city: "клх Кемерово",
-        zip: "141705",
-        country: "Russia",
+        street: "пр. Достык, д. 136",
+        city: "Нур-Султан",
+        zip: "010000",
+        country: "Kazakhstan",
       },
     },
   },
@@ -133,8 +133,8 @@ export const orders = [
     status: "Pending",
     total: 149.36,
     items: [
-      { name: "Редактор", quantity: 1, price: 64.77 },
-      { name: "Освободить", quantity: 1, price: 26.81 },
+      { name: "Скатерть льняная", quantity: 1, price: 64.77 },
+      { name: "Коврик для йоги", quantity: 1, price: 26.81 },
     ],
     delivery: {
       delivered: false,
@@ -154,8 +154,8 @@ export const orders = [
     status: "Delivered",
     total: 127.68,
     items: [
-      { name: "Что", quantity: 1, price: 78.27 },
-      { name: "Магазин", quantity: 3, price: 43.09 },
+      { name: "Книга кулинарная", quantity: 1, price: 78.27 },
+      { name: "Планшет графический", quantity: 3, price: 43.09 },
     ],
     delivery: {
       delivered: true,
@@ -175,18 +175,18 @@ export const orders = [
     status: "Pending",
     total: 61.74,
     items: [
-      { name: "Художественный", quantity: 2, price: 88.98 },
-      { name: "Интернет", quantity: 2, price: 51.23 },
+      { name: "Набор красок", quantity: 2, price: 88.98 },
+      { name: "Мышь компьютерная", quantity: 2, price: 51.23 },
     ],
     delivery: {
       delivered: false,
       deliveryDate: null,
       type: "Courier",
       address: {
-        street: "пр. Беляева, д. 687",
-        city: "г. Усть-Катав",
-        zip: "861928",
-        country: "Russia",
+        street: "ул. Тауелсиздик, д. 54",
+        city: "Шымкент",
+        zip: "160000",
+        country: "Kazakhstan",
       },
     },
   },
@@ -196,8 +196,8 @@ export const orders = [
     status: "Pending",
     total: 190.2,
     items: [
-      { name: "Какой", quantity: 1, price: 94.62 },
-      { name: "Госпожа", quantity: 1, price: 72.88 },
+      { name: "Наушники беспроводные", quantity: 1, price: 94.62 },
+      { name: "Клавиатура механическая", quantity: 1, price: 72.88 },
     ],
     delivery: {
       delivered: false,
@@ -212,4 +212,3 @@ export const orders = [
     },
   },
 ];
-

@@ -47,7 +47,7 @@ interface User {
 // Define the GraphQL schema
 const typeDefs = /* GraphQL */ `
   type Query {
-    orders(userId: ID!, limit: Int, offset: Int): [Order!]!
+    orders(userId: ID!, delivered: Boolean, country: String, limit: Int, offset: Int): [Order!]!
     users: [User!]!
   }
 
@@ -90,8 +90,14 @@ interface ResolverContext {}
 
 const resolvers = {
   Query: {
-    orders: (_: unknown, { userId, limit, offset }: { userId: string; limit?: number; offset?: number }, context: ResolverContext, info: GraphQLResolveInfo) => {
-      console.log('GraphQL Query received:', { userId, limit, offset });
+    orders: (_: unknown, { userId, delivered, country, limit, offset }: { 
+      userId: string; 
+      delivered?: boolean; 
+      country?: string;
+      limit?: number; 
+      offset?: number 
+    }, context: ResolverContext, info: GraphQLResolveInfo) => {
+      console.log('GraphQL Query received:', { userId, delivered, country, limit, offset });
       
       // Check if userId exists
       const userExists = users.some(user => user.id === userId);
@@ -105,6 +111,16 @@ const resolvers = {
       // Filter orders by userId if provided (currently ignored in mock)
       let filteredOrders = orders;
       
+      // Filter by delivery status if provided
+      if (delivered !== undefined) {
+        filteredOrders = filteredOrders.filter(order => order.delivery.delivered === delivered);
+      }
+
+      // Filter by country if provided
+      if (country !== undefined && country !== '') {
+        filteredOrders = filteredOrders.filter(order => order.delivery.address.country === country);
+      }
+
       // Apply pagination if provided
       if (offset !== undefined) {
         filteredOrders = filteredOrders.slice(offset);
