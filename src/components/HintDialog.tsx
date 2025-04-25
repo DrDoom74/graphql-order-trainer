@@ -1,6 +1,12 @@
 
 import * as React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { 
+  Dialog,
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription 
+} from "@/components/ui/dialog";
 import { HelpCircle } from "lucide-react";
 
 interface HintDialogProps {
@@ -40,7 +46,7 @@ export default function HintDialog({ open, onOpenChange }: HintDialogProps) {
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li><code className="text-blue-600">orders</code> — корневой запрос (возвращает список заказов)</li>
               <li><code className="text-blue-600">userId</code> — обязательный параметр, без него вы ничего не получите</li>
-              <li>внутри <code className="text-blue-600">orders { ... }</code> вы указываете, какие поля хотите получить</li>
+              <li>внутри <code className="text-blue-600">orders {"{"} ... {"}"}</code> вы указываете, какие поля хотите получить</li>
             </ul>
           </div>
 
@@ -133,7 +139,7 @@ export default function HintDialog({ open, onOpenChange }: HintDialogProps) {
             <h2 className="text-lg font-semibold mb-2">📘 Дополнительные советы</h2>
             <ul className="list-disc list-inside space-y-1">
               <li>Порядок полей в GraphQL не важен</li>
-              <li>Все поля <strong>вложенные</strong> — вы явно указываете, что хотите от них (например: <code>items { "{" } name { "}" }</code>)</li>
+              <li>Все поля <strong>вложенные</strong> — вы явно указываете, что хотите от них (например: <code>items {"{"} name {"}"}</code>)</li>
               <li>Если вы сделаете опечатку в названии поля — API вернёт ошибку</li>
               <li>Если вы запросите несуществующий <code>userId</code>, данные будут пустыми</li>
             </ul>
@@ -180,4 +186,3 @@ export default function HintDialog({ open, onOpenChange }: HintDialogProps) {
     </Dialog>
   );
 }
-
