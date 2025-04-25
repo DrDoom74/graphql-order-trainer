@@ -13,12 +13,20 @@ export const tasks: Task[] = [
     id: 1,
     title: "Получи список заказов пользователя с ID, датой и статусом заказа.",
     query: `{ orders(userId: "USER01") { id date status } }`,
-    validate: (input) => /orders\s*\(.+\)\s*{[^}]*id[^}]*date[^}]*status/s.test(input) || 
-                        /orders\s*\(.+\)\s*{[^}]*id[^}]*status[^}]*date/s.test(input) || 
-                        /orders\s*\(.+\)\s*{[^}]*date[^}]*id[^}]*status/s.test(input) ||
-                        /orders\s*\(.+\)\s*{[^}]*date[^}]*status[^}]*id/s.test(input) ||
-                        /orders\s*\(.+\)\s*{[^}]*status[^}]*id[^}]*date/s.test(input) ||
-                        /orders\s*\(.+\)\s*{[^}]*status[^}]*date[^}]*id/s.test(input),
+    validate: (input) => {
+      // Check for required fields
+      const hasRequiredFields = /orders\s*\(.+\)\s*{[^}]*id[^}]*date[^}]*status/s.test(input) || 
+                          /orders\s*\(.+\)\s*{[^}]*id[^}]*status[^}]*date/s.test(input) || 
+                          /orders\s*\(.+\)\s*{[^}]*date[^}]*id[^}]*status/s.test(input) ||
+                          /orders\s*\(.+\)\s*{[^}]*date[^}]*status[^}]*id/s.test(input) ||
+                          /orders\s*\(.+\)\s*{[^}]*status[^}]*id[^}]*date/s.test(input) ||
+                          /orders\s*\(.+\)\s*{[^}]*status[^}]*date[^}]*id/s.test(input);
+      
+      // Check for unwanted fields
+      const hasUnwantedFields = /orders\s*\(.+\)\s*{[^}]*(total|items|delivery)[^}]*}/s.test(input);
+      
+      return hasRequiredFields && !hasUnwantedFields;
+    },
     getExpectedData: (orders) => ({
       data: {
         orders: orders.map((o) => ({
@@ -42,7 +50,12 @@ export const tasks: Task[] = [
     id: 2,
     title: "Запроси сумму (total) каждого заказа.",
     query: `{ orders(userId: "USER01") { total } }`,
-    validate: (input) => /orders\s*\(.+\)\s*{[^}]*total/s.test(input),
+    validate: (input) => {
+      const hasRequiredFields = /orders\s*\(.+\)\s*{[^}]*total[^}]*}/s.test(input);
+      const hasUnwantedFields = /orders\s*\(.+\)\s*{[^}]*(id|date|status|items|delivery)[^}]*}/s.test(input);
+      
+      return hasRequiredFields && !hasUnwantedFields;
+    },
     getExpectedData: (orders) => ({
       data: { orders: orders.map((o) => ({ total: o.total })) },
     }),
@@ -54,20 +67,36 @@ export const tasks: Task[] = [
     id: 3,
     title: "Выведи список товаров (items) первого заказа с количеством и ценой.",
     query: `{ orders(userId: "USER01") { items { quantity price } } }`,
-    validate: (input) => /orders\s*\(.+\)\s*{[^}]*items\s*{[^}]*quantity[^}]*price[^}]*}/s.test(input) ||
-                        /orders\s*\(.+\)\s*{[^}]*items\s*{[^}]*price[^}]*quantity[^}]*}/s.test(input),
+    validate: (input) => {
+      // Check for required fields
+      const hasItemsFields = /items\s*{[^}]*quantity[^}]*price[^}]*}/s.test(input) ||
+                            /items\s*{[^}]*price[^}]*quantity[^}]*}/s.test(input);
+      
+      // Check that we're targeting the first order (no offset)
+      const hasNoOffset = !/offset\s*:/s.test(input);
+      
+      // Check for limit:1 or not specifying limit (which would return all orders)
+      const hasCorrectLimit = /limit\s*:\s*1/s.test(input) || !/limit\s*:/s.test(input);
+      
+      return hasItemsFields && hasNoOffset && hasCorrectLimit;
+    },
     getExpectedData: (orders) => ({
-      data: { orders: [orders[0].items.map(({ quantity, price }) => ({ quantity, price }))] },
+      data: { orders: [{ items: orders[0].items.map(({ quantity, price }) => ({ quantity, price })) }] },
     }),
     getInvalidData: (orders) => ({
-      data: { orders: [orders[0].items.map(({ quantity, price }) => ({ quantity, price }))] },
+      data: { orders: [{ items: orders[0].items.map(({ quantity, price }) => ({ quantity, price })) }] },
     }),
   },
   {
     id: 4,
     title: "Запроси статус доставки (delivered) всех заказов.",
     query: `{ orders(userId: "USER01") { delivery { delivered } } }`,
-    validate: (input) => /orders\s*\(.+\)\s*{[^}]*delivery\s*{[^}]*delivered[^}]*}/s.test(input),
+    validate: (input) => {
+      const hasRequiredFields = /orders\s*\(.+\)\s*{[^}]*delivery\s*{[^}]*delivered[^}]*}/s.test(input);
+      const hasUnwantedFields = /delivery\s*{[^}]*(type|deliveryDate|address)[^}]*}/s.test(input);
+      
+      return hasRequiredFields && !hasUnwantedFields;
+    },
     getExpectedData: (orders) => ({
       data: { orders: orders.map((o) => ({ delivery: { delivered: o.delivery.delivered } })) },
     }),
@@ -79,8 +108,20 @@ export const tasks: Task[] = [
     id: 5,
     title: "Покажи тип доставки и дату для доставленных заказов (используй фильтр delivered).",
     query: `{ orders(userId: "USER01", delivered: true) { delivery { type deliveryDate } } }`,
-    validate: (input) => /orders\s*\(.+delivered\s*:\s*true.+\)\s*{[^}]*delivery\s*{[^}]*type[^}]*deliveryDate[^}]*}/s.test(input) ||
-                         /orders\s*\(.+delivered\s*:\s*true.+\)\s*{[^}]*delivery\s*{[^}]*deliveryDate[^}]*type[^}]*}/s.test(input),
+    validate: (input) => {
+      // Check for delivered:true parameter
+      const hasDeliveredFilter = /orders\s*\([^)]*delivered\s*:\s*true[^)]*\)/s.test(input);
+      
+      // Check for required nested fields in correct order
+      const hasDeliveryTypeDate = /delivery\s*{[^}]*type[^}]*deliveryDate[^}]*}/s.test(input);
+      const hasDeliveryDateType = /delivery\s*{[^}]*deliveryDate[^}]*type[^}]*}/s.test(input);
+      
+      // Check for unwanted fields
+      const hasNoAddressField = !/address\s*{/s.test(input);
+      const hasNoDeliveredField = !/delivered\s*[,}]/s.test(input);
+      
+      return (hasDeliveredFilter && (hasDeliveryTypeDate || hasDeliveryDateType) && hasNoAddressField && hasNoDeliveredField);
+    },
     getExpectedData: (orders) => ({
       data: {
         orders: orders
@@ -110,8 +151,18 @@ export const tasks: Task[] = [
     id: 6,
     title: "Получи адрес доставки для второго заказа.",
     query: `{ orders(userId: "USER01") { delivery { address { street city zip country } } } }`,
-    validate: (input) => /orders\s*\(.+\)\s*{[^}]*delivery\s*{[^}]*address\s*{[^}]*street[^}]*city[^}]*zip[^}]*country[^}]*}/s.test(input) ||
-                         /orders\s*\(.+\)\s*{[^}]*delivery\s*{[^}]*address\s*{.*street.*city.*zip.*country.*}/s.test(input),
+    validate: (input) => {
+      // Check that we're targeting the second order (offset:1)
+      const hasOffset = /offset\s*:\s*1/s.test(input);
+      
+      // Check for limit:1 to get only one order
+      const hasLimit = /limit\s*:\s*1/s.test(input);
+      
+      // Check for required address fields in any order
+      const hasAddressFields = /address\s*{[^}]*(street|city|zip|country)[^}]*(street|city|zip|country)[^}]*(street|city|zip|country)[^}]*(street|city|zip|country)[^}]*}/s.test(input);
+      
+      return hasOffset && hasLimit && hasAddressFields;
+    },
     getExpectedData: (orders) => ({
       data: {
         orders: [
@@ -139,7 +190,15 @@ export const tasks: Task[] = [
     id: 7,
     title: "Выведи только первые 3 заказа с помощью limit.",
     query: `{ orders(userId: "USER01", limit: 3) { id } }`,
-    validate: (input) => /orders\s*\(.+limit\s*:\s*3[^)]*\)/s.test(input),
+    validate: (input) => {
+      // Check for limit:3 parameter
+      const hasLimit = /orders\s*\([^)]*limit\s*:\s*3[^)]*\)/s.test(input);
+      
+      // Check that we're not using offset
+      const hasNoOffset = !/offset\s*:/s.test(input);
+      
+      return hasLimit && hasNoOffset;
+    },
     getExpectedData: (orders) => ({
       data: { orders: orders.slice(0, 3).map((o) => ({ id: o.id })) },
     }),
@@ -151,7 +210,21 @@ export const tasks: Task[] = [
     id: 8,
     title: "Получи 2 заказа, начиная с третьего.",
     query: `{ orders(userId: "USER01", limit: 2, offset: 2) { id date status } }`,
-    validate: (input) => /orders\s*\(.+limit\s*:\s*2.*offset\s*:\s*2[^)]*\)\s*{.*id.*date.*status.*}/s.test(input),
+    validate: (input) => {
+      // Check for limit:2 parameter
+      const hasLimit = /orders\s*\([^)]*limit\s*:\s*2[^)]*\)/s.test(input);
+      
+      // Check for offset:2 parameter
+      const hasOffset = /orders\s*\([^)]*offset\s*:\s*2[^)]*\)/s.test(input);
+      
+      // Check for required fields: id, date, status in any order
+      const hasFields = /{\s*([^}]*id[^}]*date[^}]*status|[^}]*id[^}]*status[^}]*date|[^}]*date[^}]*id[^}]*status|[^}]*date[^}]*status[^}]*id|[^}]*status[^}]*id[^}]*date|[^}]*status[^}]*date[^}]*id)[^}]*}/s.test(input);
+      
+      // Check for absence of unwanted fields
+      const hasNoUnwantedFields = !/{\s*[^}]*(total|items|delivery)[^}]*}/s.test(input);
+      
+      return hasLimit && hasOffset && hasFields && hasNoUnwantedFields;
+    },
     getExpectedData: (orders) => ({
       data: { 
         orders: orders.slice(2, 4).map((o) => ({ 
@@ -177,13 +250,16 @@ export const tasks: Task[] = [
     query: `{ orders(userId: "USER01") { id date status total items { name quantity price } delivery { delivered deliveryDate type address { street city zip country } } } }`,
     validate: (input) => {
       // Check for required top-level fields
-      const hasTopFields = /orders\s*\(.+\)\s*{.*id.*date.*status.*total.*items.*delivery.*}/s.test(input);
+      const hasTopFields = /orders\s*\([^)]*\)\s*{[^}]*(id)[^}]*(date)[^}]*(status)[^}]*(total)[^}]*(items)[^}]*(delivery)[^}]*}/s.test(input);
+      
       // Check for required nested fields in items
-      const hasItemsFields = /items\s*{.*name.*quantity.*price.*}/s.test(input);
+      const hasItemsFields = /items\s*{[^}]*(name)[^}]*(quantity)[^}]*(price)[^}]*}/s.test(input);
+      
       // Check for required nested fields in delivery
-      const hasDeliveryFields = /delivery\s*{.*delivered.*deliveryDate.*type.*address.*}/s.test(input);
+      const hasDeliveryFields = /delivery\s*{[^}]*(delivered)[^}]*(deliveryDate)[^}]*(type)[^}]*(address)[^}]*}/s.test(input);
+      
       // Check for required nested fields in address
-      const hasAddressFields = /address\s*{.*street.*city.*zip.*country.*}/s.test(input);
+      const hasAddressFields = /address\s*{[^}]*(street)[^}]*(city)[^}]*(zip)[^}]*(country)[^}]*}/s.test(input);
       
       return hasTopFields && hasItemsFields && hasDeliveryFields && hasAddressFields;
     },
@@ -198,7 +274,18 @@ export const tasks: Task[] = [
     id: 10,
     title: "Получи последний заказ пользователя",
     query: `{ orders(userId: "USER01", offset: 9, limit: 1) { id date total } }`,
-    validate: (input) => /orders\s*\(.+offset\s*:\s*9.*limit\s*:\s*1[^}]*id[^}]*date[^}]*total/s.test(input),
+    validate: (input) => {
+      // Check that we're targeting the last order (offset:9)
+      const hasOffset = /offset\s*:\s*9/s.test(input);
+      
+      // Check for limit:1 to get only one order
+      const hasLimit = /limit\s*:\s*1/s.test(input);
+      
+      // Check for required fields in any order
+      const hasRequiredFields = /{\s*([^}]*id[^}]*date[^}]*total|[^}]*id[^}]*total[^}]*date|[^}]*date[^}]*id[^}]*total|[^}]*date[^}]*total[^}]*id|[^}]*total[^}]*id[^}]*date|[^}]*total[^}]*date[^}]*id)[^}]*}/s.test(input);
+      
+      return hasOffset && hasLimit && hasRequiredFields;
+    },
     getExpectedData: (orders) => ({
       data: {
         orders: [{
@@ -222,7 +309,18 @@ export const tasks: Task[] = [
     id: 11,
     title: "Выведи все заказы пользователя, доставленные в Казахстан. Отобрази поля id, date, delivery.address.country.",
     query: `{ orders(userId: "USER01", country: "Kazakhstan") { id date delivery { address { country } } } }`,
-    validate: (input) => /orders\s*\(.+country\s*:\s*"Kazakhstan"[^)]*\)\s*{.*id.*date.*delivery\s*{.*address\s*{.*country.*}.*}.*}/s.test(input),
+    validate: (input) => {
+      // Check for country:Kazakhstan parameter
+      const hasCountry = /orders\s*\([^)]*country\s*:\s*["']Kazakhstan["'][^)]*\)/s.test(input);
+      
+      // Check for required fields in any order
+      const hasIdAndDate = /{\s*([^}]*id[^}]*date|[^}]*date[^}]*id)[^}]*}/s.test(input);
+      
+      // Check for nested address.country field
+      const hasCountryField = /delivery\s*{\s*address\s*{\s*country\s*}\s*}/s.test(input);
+      
+      return hasCountry && hasIdAndDate && hasCountryField;
+    },
     getExpectedData: (orders) => ({
       data: {
         orders: orders

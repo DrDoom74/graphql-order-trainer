@@ -1,4 +1,3 @@
-
 import * as React from "react";
 import TrainerHeader from "@/components/TrainerHeader";
 import TrainerFooter from "@/components/TrainerFooter";
@@ -221,7 +220,7 @@ export default function Index() {
 
   function prev() {
     if (isSandboxMode) return;
-    setCurrent((c) => (c === 0 ? 0 : c - 1));
+    setCurrent((c) => (c === 0 ? tasks.length - 1 : c - 1));
   }
   
   function next() {

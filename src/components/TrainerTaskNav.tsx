@@ -22,7 +22,7 @@ export default function TrainerTaskNav({ current, correctList, onPrev, onNext }:
           title="Назад"
           className="px-3 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-xl disabled:opacity-50 transition"
           onClick={onPrev}
-          disabled={current === 0}
+          disabled={false}
         >
           <ArrowLeft />
         </button>
