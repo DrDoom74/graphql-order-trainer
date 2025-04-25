@@ -149,7 +149,7 @@ export const tasks: Task[] = [
   },
   {
     id: 8,
-    title: "Получи 2 заказа, начиная с третьего (offset = 2, limit = 2).",
+    title: "Получи 2 заказа, начиная с третьего.",
     query: `{ orders(userId: "USER01", limit: 2, offset: 2) { id date status } }`,
     validate: (input) => /orders\s*\(.+limit\s*:\s*2.*offset\s*:\s*2[^)]*\)\s*{.*id.*date.*status.*}/s.test(input),
     getExpectedData: (orders) => ({
@@ -196,7 +196,7 @@ export const tasks: Task[] = [
   },
   {
     id: 10,
-    title: "Последний заказ пользователя",
+    title: "Получи последний заказ пользователя",
     query: `{ orders(userId: "USER01", offset: 9, limit: 1) { id date total } }`,
     validate: (input) => /orders\s*\(.+offset\s*:\s*9.*limit\s*:\s*1[^}]*id[^}]*date[^}]*total/s.test(input),
     getExpectedData: (orders) => ({
