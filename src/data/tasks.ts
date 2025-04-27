@@ -48,7 +48,7 @@ export const tasks: Task[] = [
   },
   {
     id: 2,
-    title: "Запроси сумму (total) каждого заказа.",
+    title: "Запроси сумму (total) каждого заказа пользователя.",
     query: `{ orders(userId: "USER01") { total } }`,
     validate: (input) => {
       const hasRequiredFields = /orders\s*\(.+\)\s*{[^}]*total[^}]*}/s.test(input);
@@ -258,7 +258,7 @@ export const tasks: Task[] = [
   },
   {
     id: 8,
-    title: "Получи 2 заказа, начиная с третьего.",
+    title: "Получи id, дату и статус двух заказа, начиная с третьего (id:O003).",
     query: `{ orders(userId: "USER01", offset: 2, limit: 2) { id date status } }`,
     validate: (input) => {
       // Проверяем наличие параметра limit:2
@@ -355,7 +355,7 @@ export const tasks: Task[] = [
   },
   {
     id: 10,
-    title: "Получи последний заказ пользователя",
+    title: "Получи id и дату последнего заказ пользователя.",
     query: `{ orders(userId: "USER01", offset: 9, limit: 1) { id date } }`,
     validate: (input) => {
       // Проверяем, что запрашивается один заказ (limit: 1)
