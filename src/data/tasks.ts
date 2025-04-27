@@ -222,25 +222,32 @@ export const tasks: Task[] = [
     query: `{ orders(userId: "USER01", limit: 3) { id } }`,
     validate: (input) => {
       // Проверяем наличие параметра limit:3 (точное значение)
-      const hasExactLimit3 = /orders\s*\([^)]*limit\s*:\s*3[^)]*\)/s.test(input) && 
-                           !/orders\s*\([^)]*limit\s*:\s*[^3][^)]*\)/s.test(input);
-      
-      // Не должно быть параметра offset
-      const hasNoOffset = !/offset\s*:/s.test(input);
+      const hasLimitThree = /orders\s*\(\s*[^)]*\blimit\s*:\s*3\b[^)]*\)/s.test(input);
       
       // Должно быть поле id (обязательно)
-      const hasIdField = /{\s*[^}]*id[^}]*}/s.test(input);
+      const hasIdField = /{\s*[^}]*\bid\b[^}]*}/s.test(input);
       
+      // Допускаются поля date и status вместе с id
+      const hasAllowedFields = 
+        /{\s*[^}]*\bid\b[^}]*\bdate\b[^}]*\bstatus\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bid\b[^}]*\bstatus\b[^}]*\bdate\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bdate\b[^}]*\bid\b[^}]*\bstatus\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bdate\b[^}]*\bstatus\b[^}]*\bid\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bstatus\b[^}]*\bid\b[^}]*\bdate\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bstatus\b[^}]*\bdate\b[^}]*\bid\b[^}]*}/s.test(input) ||
+        /{\s*[^}]*\bid\b[^}]*\bdate\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bdate\b[^}]*\bid\b[^}]*}/s.test(input) ||
+        /{\s*[^}]*\bid\b[^}]*\bstatus\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bstatus\b[^}]*\bid\b[^}]*}/s.test(input) ||
+        /{\s*[^}]*\bid\b[^}]*}/s.test(input);
+        
       // Не должно быть вложенных объектов
       const hasNoNestedObjects = !/{\s*[^}]*(items|delivery)\s*{/s.test(input);
       
       // Проверка на отсутствие полей total, items, delivery
       const hasNoComplexFields = !/{\s*[^}]*(total|items|delivery)[^}]*}/s.test(input);
       
-      // Допускаются поля date и status вместе с id
-      const hasOnlyAllowedFields = !/{\s*[^}]*(?!(id|date|status|}\s*$))[a-zA-Z_]+[^}]*}/s.test(input);
-      
-      return hasExactLimit3 && hasNoOffset && hasIdField && hasNoNestedObjects && hasNoComplexFields && hasOnlyAllowedFields;
+      return hasLimitThree && hasIdField && hasAllowedFields && hasNoNestedObjects && hasNoComplexFields;
     },
     getExpectedData: (orders) => ({
       data: { orders: orders.slice(0, 3).map((o) => ({ id: o.id })) },
@@ -254,21 +261,25 @@ export const tasks: Task[] = [
     title: "Получи 2 заказа, начиная с третьего.",
     query: `{ orders(userId: "USER01", offset: 2, limit: 2) { id date status } }`,
     validate: (input) => {
-      // Строго проверяем наличие параметра limit:2
-      const hasExactLimit2 = /orders\s*\([^)]*limit\s*:\s*2[^)]*\)/s.test(input) && 
-                            !/orders\s*\([^)]*limit\s*:\s*[^2][^)]*\)/s.test(input);
+      // Проверяем наличие параметра limit:2
+      const hasLimit2 = /orders\s*\(\s*[^)]*\blimit\s*:\s*2\b[^)]*\)/s.test(input);
       
-      // Строго проверяем наличие параметра offset:2
-      const hasExactOffset2 = /orders\s*\([^)]*offset\s*:\s*2[^)]*\)/s.test(input) && 
-                             !/orders\s*\([^)]*offset\s*:\s*[^2][^)]*\)/s.test(input);
+      // Проверяем наличие параметра offset:2
+      const hasOffset2 = /orders\s*\(\s*[^)]*\boffset\s*:\s*2\b[^)]*\)/s.test(input);
       
       // Проверяем наличие обязательных полей: id, date, status в любом порядке
-      const hasRequiredFields = /{\s*([^}]*id[^}]*date[^}]*status|[^}]*id[^}]*status[^}]*date|[^}]*date[^}]*id[^}]*status|[^}]*date[^}]*status[^}]*id|[^}]*status[^}]*id[^}]*date|[^}]*status[^}]*date[^}]*id)[^}]*}/s.test(input);
+      const hasRequiredFields = 
+        /{\s*[^}]*\bid\b[^}]*\bdate\b[^}]*\bstatus\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bid\b[^}]*\bstatus\b[^}]*\bdate\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bdate\b[^}]*\bid\b[^}]*\bstatus\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bdate\b[^}]*\bstatus\b[^}]*\bid\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bstatus\b[^}]*\bid\b[^}]*\bdate\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bstatus\b[^}]*\bdate\b[^}]*\bid\b[^}]*}/s.test(input);
       
       // Проверяем отсутствие нежелательных полей
       const hasNoUnwantedFields = !/{\s*[^}]*(total|items|delivery)/s.test(input);
       
-      return hasExactLimit2 && hasExactOffset2 && hasRequiredFields && hasNoUnwantedFields;
+      return hasLimit2 && hasOffset2 && hasRequiredFields && hasNoUnwantedFields;
     },
     getExpectedData: (orders) => ({
       data: { 
@@ -348,26 +359,34 @@ export const tasks: Task[] = [
     query: `{ orders(userId: "USER01", offset: 9, limit: 1) { id date } }`,
     validate: (input) => {
       // Проверяем, что запрашивается один заказ (limit: 1)
-      const hasLimit1 = /limit\s*:\s*1/.test(input);
+      const hasLimit1 = /orders\s*\(\s*[^)]*\blimit\s*:\s*1\b[^)]*\)/s.test(input);
       
       // Проверяем, что запрашивается с правильным смещением для последнего заказа
-      const hasOffset9 = /offset\s*:\s*9/.test(input);
+      const hasOffset9 = /orders\s*\(\s*[^)]*\boffset\s*:\s*9\b[^)]*\)/s.test(input);
       
       // Проверяем наличие полей id и date (в любом порядке)
       const hasIdField = /\bid\b/.test(input);
       const hasDateField = /\bdate\b/.test(input);
       
-      // Проверяем отсутствие других полей верхнего уровня
-      const hasNoExtraFields = !/{\s*[^}]*(status|total|items|delivery)[^}]*}/.test(input);
+      // Допускаем также поле status
+      const hasAllowedFields = 
+        /{\s*[^}]*\bid\b[^}]*\bdate\b[^}]*\bstatus\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bid\b[^}]*\bstatus\b[^}]*\bdate\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bdate\b[^}]*\bid\b[^}]*\bstatus\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bdate\b[^}]*\bstatus\b[^}]*\bid\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bstatus\b[^}]*\bid\b[^}]*\bdate\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bstatus\b[^}]*\bdate\b[^}]*\bid\b[^}]*}/s.test(input) ||
+        /{\s*[^}]*\bid\b[^}]*\bdate\b[^}]*}/s.test(input) || 
+        /{\s*[^}]*\bdate\b[^}]*\bid\b[^}]*}/s.test(input);
       
       // Проверяем отсутствие вложенных полей
       const hasNoNestedFields = !/\bitems\s*{/.test(input) && !/\bdelivery\s*{/.test(input);
       
-      // Только id и date должны присутствовать (в любом порядке)
-      const hasOnlyIdAndDate = /{\s*id\s+date\s*}/.test(input) || /{\s*date\s+id\s*}/.test(input);
+      // Проверяем отсутствие нежелательных полей верхнего уровня
+      const hasNoExtraFields = !/{\s*[^}]*(total|items|delivery)[^}]*}/.test(input);
       
       return hasLimit1 && hasOffset9 && hasIdField && hasDateField && 
-             hasNoExtraFields && hasNoNestedFields && hasOnlyIdAndDate;
+             hasAllowedFields && hasNoNestedFields && hasNoExtraFields;
     },
     getExpectedData: (orders) => ({
       data: {
