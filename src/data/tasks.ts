@@ -66,35 +66,42 @@ export const tasks: Task[] = [
   {
     id: 3,
     title: "Выведи список товаров (items) первого заказа с количеством и ценой.",
-    query: `{ orders(userId: "USER01") { items { quantity price } } }`,
+    query: `{ orders(userId: "USER01", limit: 1) { items { name quantity price } } }`,
     validate: (input) => {
-      // Check for limit:1 or set specific limit parameter to only get the first order
-      const hasLimitOne = /limit\s*:\s*1/s.test(input);
+      // Проверяем, что запрашивается только первый заказ
+      // Должен быть либо limit: 1, либо указан конкретный фильтр для первого заказа
+      const hasLimitOne = /limit\s*:\s*1/.test(input);
       
-      // Alternative: check if the query doesn't specify an offset (which would get the first order by default)
-      const hasNoOffset = !/offset\s*:/s.test(input);
+      // Не должно быть offset параметра, так как нам нужен первый заказ
+      const hasNoOffset = !/offset\s*:/.test(input);
       
-      // Check for items fields in any order (must be exactly these 3 fields)
-      const itemsFieldPattern = /items\s*{[^}]*name[^}]*quantity[^}]*price[^}]*}|items\s*{[^}]*name[^}]*price[^}]*quantity[^}]*}|items\s*{[^}]*quantity[^}]*name[^}]*price[^}]*}|items\s*{[^}]*quantity[^}]*price[^}]*name[^}]*}|items\s*{[^}]*price[^}]*name[^}]*quantity[^}]*}|items\s*{[^}]*price[^}]*quantity[^}]*name[^}]*}/s;
-      const hasCorrectItemsFields = itemsFieldPattern.test(input);
+      // Проверяем, что запрашиваются только поля name, quantity, price в любом порядке
+      // и не запрашиваются никакие другие поля в items
+      const itemsFieldPatterns = [
+        /items\s*{\s*name\s+quantity\s+price\s*}/s,
+        /items\s*{\s*name\s+price\s+quantity\s*}/s,
+        /items\s*{\s*quantity\s+name\s+price\s*}/s,
+        /items\s*{\s*quantity\s+price\s+name\s*}/s,
+        /items\s*{\s*price\s+name\s+quantity\s*}/s,
+        /items\s*{\s*price\s+quantity\s+name\s*}/s
+      ];
       
-      // Make sure there are only items fields at the top level (no id, date, status, etc.)
-      const hasOnlyItemsAtTopLevel = !/orders\s*\([^)]*\)\s*{[^{]*(id|date|status|total|delivery)[^{]*{/s.test(input) &&
-                                   !/orders\s*\([^)]*\)\s*{[^}]*(id|date|status|total|delivery)[^}]*}/s.test(input);
+      // Проверяем соответствие хотя бы одному из паттернов полей items
+      const hasCorrectItemsFields = itemsFieldPatterns.some(pattern => pattern.test(input));
       
-      // Ensure items fields has exactly the required fields (no extras like item id)
-      const hasExactlyRequiredItemsFields = !(/items\s*{[^}]*(id|itemId|code|description)[^}]*}/s.test(input));
+      // Проверяем, что в запросе нет других полей на верхнем уровне кроме items
+      const hasOnlyItemsField = !/orders\s*\([^)]*\)\s*{\s*([^{]*?(id|date|status|total|delivery)[^{]*?)(?:{|$)/.test(input);
       
-      // We want either limit:1 or no specification of limit, ensuring we get just the first order
-      const limitIsCorrect = hasLimitOne || (!/limit\s*:/s.test(input));
+      // Проверяем, что нет лишних полей в items
+      const hasNoExtraItemFields = !/items\s*{[^}]*(id|itemId|code|description)[^}]*}/s.test(input);
       
-      return hasNoOffset && limitIsCorrect && hasCorrectItemsFields && hasOnlyItemsAtTopLevel && hasExactlyRequiredItemsFields;
+      return hasLimitOne && hasNoOffset && hasCorrectItemsFields && hasOnlyItemsField && hasNoExtraItemFields;
     },
     getExpectedData: (orders) => ({
-      data: { orders: [{ items: orders[0].items.map(({ quantity, price, name }) => ({ quantity, price, name })) }] },
+      data: { orders: [{ items: orders[0].items.map(({ name, quantity, price }) => ({ name, quantity, price })) }] },
     }),
     getInvalidData: (orders) => ({
-      data: { orders: [{ items: orders[0].items.map(({ quantity, price, name }) => ({ quantity, price, name })) }] },
+      data: { orders: [{ items: orders[0].items.map(({ name, quantity, price }) => ({ name, quantity, price })) }] },
     }),
   },
   {
@@ -214,19 +221,26 @@ export const tasks: Task[] = [
     title: "Выведи только первые 3 заказа с помощью limit.",
     query: `{ orders(userId: "USER01", limit: 3) { id } }`,
     validate: (input) => {
-      // Check for limit:3 parameter
-      const hasLimit3 = /orders\s*\([^)]*limit\s*:\s*3[^)]*\)/s.test(input);
+      // Проверяем наличие параметра limit:3 (точное значение)
+      const hasExactLimit3 = /orders\s*\([^)]*limit\s*:\s*3[^)]*\)/s.test(input) && 
+                           !/orders\s*\([^)]*limit\s*:\s*[^3][^)]*\)/s.test(input);
       
-      // Check that we're not using offset
+      // Не должно быть параметра offset
       const hasNoOffset = !/offset\s*:/s.test(input);
       
-      // Must have at least the id field, but can allow other basic fields like date, status
+      // Должно быть поле id (обязательно)
       const hasIdField = /{\s*[^}]*id[^}]*}/s.test(input);
       
-      // Should not have nested objects like items or delivery
-      const hasNoNestedObjects = !/{\s*[^}]*(items|delivery)[^}]*{/s.test(input);
+      // Не должно быть вложенных объектов
+      const hasNoNestedObjects = !/{\s*[^}]*(items|delivery)\s*{/s.test(input);
       
-      return hasLimit3 && hasNoOffset && hasIdField && hasNoNestedObjects;
+      // Проверка на отсутствие полей total, items, delivery
+      const hasNoComplexFields = !/{\s*[^}]*(total|items|delivery)[^}]*}/s.test(input);
+      
+      // Допускаются поля date и status вместе с id
+      const hasOnlyAllowedFields = !/{\s*[^}]*(?!(id|date|status|}\s*$))[a-zA-Z_]+[^}]*}/s.test(input);
+      
+      return hasExactLimit3 && hasNoOffset && hasIdField && hasNoNestedObjects && hasNoComplexFields && hasOnlyAllowedFields;
     },
     getExpectedData: (orders) => ({
       data: { orders: orders.slice(0, 3).map((o) => ({ id: o.id })) },
@@ -238,21 +252,23 @@ export const tasks: Task[] = [
   {
     id: 8,
     title: "Получи 2 заказа, начиная с третьего.",
-    query: `{ orders(userId: "USER01", limit: 2, offset: 2) { id date status } }`,
+    query: `{ orders(userId: "USER01", offset: 2, limit: 2) { id date status } }`,
     validate: (input) => {
-      // Check for limit:2 parameter
-      const hasLimit = /orders\s*\([^)]*limit\s*:\s*2[^)]*\)/s.test(input);
+      // Строго проверяем наличие параметра limit:2
+      const hasExactLimit2 = /orders\s*\([^)]*limit\s*:\s*2[^)]*\)/s.test(input) && 
+                            !/orders\s*\([^)]*limit\s*:\s*[^2][^)]*\)/s.test(input);
       
-      // Check for offset:2 parameter
-      const hasOffset = /orders\s*\([^)]*offset\s*:\s*2[^)]*\)/s.test(input);
+      // Строго проверяем наличие параметра offset:2
+      const hasExactOffset2 = /orders\s*\([^)]*offset\s*:\s*2[^)]*\)/s.test(input) && 
+                             !/orders\s*\([^)]*offset\s*:\s*[^2][^)]*\)/s.test(input);
       
-      // Check for required fields: id, date, status in any order
+      // Проверяем наличие обязательных полей: id, date, status в любом порядке
       const hasRequiredFields = /{\s*([^}]*id[^}]*date[^}]*status|[^}]*id[^}]*status[^}]*date|[^}]*date[^}]*id[^}]*status|[^}]*date[^}]*status[^}]*id|[^}]*status[^}]*id[^}]*date|[^}]*status[^}]*date[^}]*id)[^}]*}/s.test(input);
       
-      // Check for absence of unwanted fields
+      // Проверяем отсутствие нежелательных полей
       const hasNoUnwantedFields = !/{\s*[^}]*(total|items|delivery)/s.test(input);
       
-      return hasLimit && hasOffset && hasRequiredFields && hasNoUnwantedFields;
+      return hasExactLimit2 && hasExactOffset2 && hasRequiredFields && hasNoUnwantedFields;
     },
     getExpectedData: (orders) => ({
       data: { 
@@ -329,32 +345,35 @@ export const tasks: Task[] = [
   {
     id: 10,
     title: "Получи последний заказ пользователя",
-    query: `{ orders(userId: "USER01", offset: 9, limit: 1) { id date total } }`,
+    query: `{ orders(userId: "USER01", offset: 9, limit: 1) { id date } }`,
     validate: (input) => {
-      // Check for limit:1 (required to get only the last order)
-      const hasLimit1 = /limit\s*:\s*1/s.test(input);
+      // Проверяем, что запрашивается один заказ (limit: 1)
+      const hasLimit1 = /limit\s*:\s*1/.test(input);
       
-      // Check for offset that would return the last order (offset: 9 for a 10-item array)
-      const hasOffset9 = /offset\s*:\s*9/s.test(input);
+      // Проверяем, что запрашивается с правильным смещением для последнего заказа
+      const hasOffset9 = /offset\s*:\s*9/.test(input);
       
-      // Check for required fields: id and date (in any order)
-      const hasIdField = /\bid\b/s.test(input);
-      const hasDateField = /\bdate\b/s.test(input);
+      // Проверяем наличие полей id и date (в любом порядке)
+      const hasIdField = /\bid\b/.test(input);
+      const hasDateField = /\bdate\b/.test(input);
       
-      // Ensure total field is optional but allowed
-      const hasNoUnwantedFields = !/{\s*[^}]*(status|items|delivery)/s.test(input);
+      // Проверяем отсутствие других полей верхнего уровня
+      const hasNoExtraFields = !/{\s*[^}]*(status|total|items|delivery)[^}]*}/.test(input);
       
-      // Check that no nested fields like items or delivery are requested
-      const noNestedFields = !/\bitems\s*{/s.test(input) && !/\bdelivery\s*{/s.test(input);
+      // Проверяем отсутствие вложенных полей
+      const hasNoNestedFields = !/\bitems\s*{/.test(input) && !/\bdelivery\s*{/.test(input);
       
-      return hasLimit1 && hasOffset9 && hasIdField && hasDateField && hasNoUnwantedFields && noNestedFields;
+      // Только id и date должны присутствовать (в любом порядке)
+      const hasOnlyIdAndDate = /{\s*id\s+date\s*}/.test(input) || /{\s*date\s+id\s*}/.test(input);
+      
+      return hasLimit1 && hasOffset9 && hasIdField && hasDateField && 
+             hasNoExtraFields && hasNoNestedFields && hasOnlyIdAndDate;
     },
     getExpectedData: (orders) => ({
       data: {
         orders: [{
           id: orders[9].id,
-          date: orders[9].date,
-          total: orders[9].total
+          date: orders[9].date
         }]
       },
     }),
@@ -362,8 +381,7 @@ export const tasks: Task[] = [
       data: {
         orders: [{
           id: orders[9].id,
-          date: orders[9].date,
-          total: orders[9].total
+          date: orders[9].date
         }]
       },
     }),
@@ -373,27 +391,27 @@ export const tasks: Task[] = [
     title: "Выведи все заказы пользователя, доставленные в Казахстан. Отобрази поля id, date, delivery.address.country.",
     query: `{ orders(userId: "USER01", country: "Kazakhstan") { id date delivery { address { country } } } }`,
     validate: (input) => {
-      // Check for country:Kazakhstan parameter
-      const hasCountry = /orders\s*\([^)]*country\s*:\s*["']Kazakhstan["'][^)]*\)/s.test(input);
+      // Проверяем наличие параметра country: "Kazakhstan"
+      const hasKazakhstanCountry = /orders\s*\([^)]*country\s*:\s*["']Kazakhstan["'][^)]*\)/s.test(input);
       
-      // Ensure no limit parameter is specified (we want all Kazakhstan orders)
+      // Не должно быть параметра limit
       const hasNoLimit = !/limit\s*:/s.test(input);
       
-      // Check for required top-level fields (id and date in any order)
+      // Проверяем наличие полей id и date на верхнем уровне
       const hasIdField = /\bid\b/s.test(input);
       const hasDateField = /\bdate\b/s.test(input);
       
-      // Check for nested country field within address within delivery
+      // Проверяем наличие вложенного поля country в address в delivery
       const hasNestedCountryField = /delivery\s*{\s*address\s*{\s*country\s*}\s*}/s.test(input);
       
-      // Check that there are no unwanted fields at top level
+      // Проверяем отсутствие нежелательных полей верхнего уровня
       const hasNoUnwantedTopLevelFields = !/{\s*[^}]*(status|total|items)[^}]*}/s.test(input);
       
-      // Check that there are no unwanted fields in address
+      // Проверяем отсутствие нежелательных полей в address
       const hasNoUnwantedAddressFields = !/address\s*{\s*[^}]*(street|city|zip)[^}]*}/s.test(input);
       
-      return hasCountry && hasNoLimit && hasIdField && hasDateField && hasNestedCountryField && 
-             hasNoUnwantedTopLevelFields && hasNoUnwantedAddressFields;
+      return hasKazakhstanCountry && hasNoLimit && hasIdField && hasDateField && 
+             hasNestedCountryField && hasNoUnwantedTopLevelFields && hasNoUnwantedAddressFields;
     },
     getExpectedData: (orders) => ({
       data: {
