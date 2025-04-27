@@ -355,7 +355,7 @@ export const tasks: Task[] = [
   },
   {
     id: 10,
-    title: "Получи id и дату последнего заказ пользователя.",
+    title: "Получи id и дату последнего заказа пользователя.",
     query: `{ orders(userId: "USER01", offset: 9, limit: 1) { id date } }`,
     validate: (input) => {
       // Проверяем, что запрашивается один заказ (limit: 1)
