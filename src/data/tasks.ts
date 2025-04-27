@@ -262,35 +262,46 @@ export const tasks: Task[] = [
     title: "Покажи все поля заказа, включая товары и доставку.",
     query: `{ orders(userId: "USER01") { id date status total items { name quantity price } delivery { delivered deliveryDate type address { street city zip country } } } }`,
     validate: (input) => {
+      // Much simpler validation logic that just checks for presence of main fields
       // Check if orders query is present with userId parameter
       const hasOrdersQuery = /orders\s*\([^)]*userId\s*:/s.test(input);
       
-      // Check for required top-level fields in any order
-      const hasIdField = /[{,]\s*id\s*[,}]/s.test(input);
-      const hasDateField = /[{,]\s*date\s*[,}]/s.test(input);
-      const hasStatusField = /[{,]\s*status\s*[,}]/s.test(input);
-      const hasTotalField = /[{,]\s*total\s*[,}]/s.test(input);
+      // Check for required top-level fields
+      const hasIdField = /\bid\b/s.test(input);
+      const hasDateField = /\bdate\b/s.test(input); 
+      const hasStatusField = /\bstatus\b/s.test(input);
+      const hasTotalField = /\btotal\b/s.test(input);
       
       // Check for items with required fields
-      const hasItemsStruct = /items\s*{[^}]*(name)[^}]*(quantity)[^}]*(price)[^}]*}/s.test(input);
+      const hasItemsField = /\bitems\s*{[^}]*\bname\b[^}]*\bquantity\b[^}]*\bprice\b/s.test(input) ||
+                           /\bitems\s*{[^}]*\bname\b[^}]*\bprice\b[^}]*\bquantity\b/s.test(input) ||
+                           /\bitems\s*{[^}]*\bquantity\b[^}]*\bname\b[^}]*\bprice\b/s.test(input) ||
+                           /\bitems\s*{[^}]*\bquantity\b[^}]*\bprice\b[^}]*\bname\b/s.test(input) ||
+                           /\bitems\s*{[^}]*\bprice\b[^}]*\bname\b[^}]*\bquantity\b/s.test(input) ||
+                           /\bitems\s*{[^}]*\bprice\b[^}]*\bquantity\b[^}]*\bname\b/s.test(input);
       
       // Check for delivery with required fields
-      const hasDeliveryField = /delivery\s*{/s.test(input);
-      const hasDeliveredField = /delivered\s*[,}]/s.test(input);
-      const hasDeliveryDateField = /deliveryDate\s*[,}]/s.test(input);
-      const hasTypeField = /type\s*[,}]/s.test(input);
+      const hasDeliveryField = /\bdelivery\s*{/s.test(input);
+      const hasDeliveredField = /\bdelivered\b/s.test(input);
+      const hasDeliveryDateField = /\bdeliveryDate\b/s.test(input);
+      const hasTypeField = /\btype\b/s.test(input);
       
-      // Check for address with required fields
-      const hasAddressStruct = /address\s*{[^}]*(street)[^}]*(city)[^}]*(zip|zipcode|postal|postalcode)[^}]*(country)[^}]*}/s.test(input);
+      // Check for address with required fields - more lenient check
+      const hasAddressField = /\baddress\s*{/s.test(input);
+      const hasStreetField = /\bstreet\b/s.test(input);
+      const hasCityField = /\bcity\b/s.test(input);
+      const hasZipField = /\bzip\b/s.test(input) || /\bzipcode\b/s.test(input) || /\bpostal\b/s.test(input);
+      const hasCountryField = /\bcountry\b/s.test(input);
       
-      // All required top-level fields
-      const hasRequiredTopFields = hasIdField && hasDateField && hasStatusField && hasTotalField;
+      // Ensure all main sections and fields are present
+      const hasTopFields = hasIdField && hasDateField && hasStatusField && hasTotalField;
+      const hasItemsStructure = hasItemsField;
+      const hasDeliveryStructure = hasDeliveryField && hasDeliveredField && hasDeliveryDateField && hasTypeField;
+      const hasAddressStructure = hasAddressField && hasStreetField && hasCityField && 
+                                  (hasZipField || /\bpostalcode\b/s.test(input)) && hasCountryField;
       
-      // All required delivery fields
-      const hasRequiredDeliveryFields = hasDeliveryField && hasDeliveredField && hasDeliveryDateField && hasTypeField;
-      
-      // Overall validation is less strict, ensuring basic structure is present
-      return hasOrdersQuery && hasRequiredTopFields && hasItemsStruct && hasRequiredDeliveryFields && hasAddressStruct;
+      return hasOrdersQuery && hasTopFields && hasItemsStructure && 
+             hasDeliveryStructure && hasAddressStructure;
     },
     getExpectedData: (orders) => ({
       data: { orders },
@@ -304,37 +315,27 @@ export const tasks: Task[] = [
     title: "Получи последний заказ пользователя",
     query: `{ orders(userId: "USER01", offset: 9, limit: 1) { id date total } }`,
     validate: (input) => {
-      // Check that we're targeting potentially the last order with offset and limit
-      const hasOffsetParam = /offset\s*:\s*(\d+)/s.exec(input);
-      const offset = hasOffsetParam ? parseInt(hasOffsetParam[1]) : null;
+      // Check for limit:1 to get only one order (required)
+      const hasLimitParam = /limit\s*:\s*1/s.test(input);
       
-      // Check for limit:1 to get only one order
-      const hasLimitParam = /limit\s*:\s*(\d+)/s.exec(input);
-      const limit = hasLimitParam ? parseInt(hasLimitParam[1]) : null;
-      
-      // In task 10, we want to get the last order, which could be at various offsets
-      // depending on total number of orders, but limit should be 1
-      const hasValidLimit = limit === 1;
-      
-      // Check if offset is specified (could be various values like 9)
-      const hasValidOffset = offset !== null && offset >= 0;
+      // Check for any offset parameter - we just need one order with any offset
+      const hasOffsetParam = /offset\s*:\s*\d+/s.test(input);
       
       // Check for userId parameter (required)
       const hasUserId = /userId\s*:/s.test(input);
       
-      // Check for required fields: must include id, date (total is optional)
-      const hasIdField = /id\s*[,}]/s.test(input);
-      const hasDateField = /date\s*[,}]/s.test(input);
+      // Check for required fields: must include id, date
+      const hasIdField = /\bid\b/s.test(input);
+      const hasDateField = /\bdate\b/s.test(input);
       
-      // Status field is fine to include
-      const hasStatusField = /status\s*[,}]/s.test(input);
-      const hasTotalField = /total\s*[,}]/s.test(input);
+      // Status and total fields are optional but allowed
+      const hasStatusOrTotalField = /\bstatus\b/s.test(input) || /\btotal\b/s.test(input) || true;
       
-      // Only these fields should be allowed at the top level
-      const onlyAllowedFields = !/[{]\s*([^{}]*items|[^{}]*delivery)[,}]/s.test(input);
+      // Check that no nested fields like items or delivery are requested
+      const noNestedFields = !(/\bitems\s*{/s.test(input) || /\bdelivery\s*{/s.test(input));
       
-      return hasUserId && hasValidOffset && hasValidLimit && hasIdField && 
-             hasDateField && onlyAllowedFields && (hasStatusField || hasTotalField || true);
+      return hasUserId && hasOffsetParam && hasLimitParam && hasIdField && 
+             hasDateField && hasStatusOrTotalField && noNestedFields;
     },
     getExpectedData: (orders) => ({
       data: {
